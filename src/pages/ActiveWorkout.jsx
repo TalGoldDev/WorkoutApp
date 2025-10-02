@@ -1,0 +1,369 @@
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useWorkoutContext } from '../contexts/WorkoutContext';
+import { Layout } from '../components/shared/Layout';
+import { Button } from '../components/shared/Button';
+import { Check, Minus, Plus, X } from 'lucide-react';
+import { formatWeight } from '../utils/helpers';
+
+export const ActiveWorkout = () => {
+  const navigate = useNavigate();
+  const { activeWorkout, updateActiveWorkout, completeWorkout, cancelWorkout } =
+    useWorkoutContext();
+  const [currentExercises, setCurrentExercises] = useState([]);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [restTimer, setRestTimer] = useState(null);
+  const [timerInterval, setTimerInterval] = useState(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState('default');
+  const notificationsEnabledRef = useRef(false);
+
+  useEffect(() => {
+    if (!activeWorkout) {
+      navigate('/');
+      return;
+    }
+    setCurrentExercises(activeWorkout.exercises);
+  }, [activeWorkout, navigate]);
+
+  // Check notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      const currentPermission = Notification.permission;
+      console.log('Initial notification permission:', currentPermission);
+      setNotificationPermission(currentPermission);
+      if (currentPermission === 'granted') {
+        setNotificationsEnabled(true);
+        notificationsEnabledRef.current = true;
+      }
+    }
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerInterval) clearInterval(timerInterval);
+    };
+  }, [timerInterval]);
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      console.log('Requesting notification permission...');
+      const permission = await Notification.requestPermission();
+      console.log('Permission result:', permission);
+      setNotificationPermission(permission);
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        notificationsEnabledRef.current = true;
+        console.log('Notifications enabled');
+
+        // Test notification immediately
+        try {
+          new Notification('Notifications Enabled! 🔔', {
+            body: 'You will be notified when rest is complete.',
+          });
+        } catch (error) {
+          console.error('Error showing test notification:', error);
+        }
+      }
+    }
+  };
+
+  const toggleNotifications = async () => {
+    console.log('Toggle clicked. Current state:', { notificationsEnabled, notificationPermission });
+
+    // If permission not granted, request it
+    if (notificationPermission !== 'granted') {
+      await requestNotificationPermission();
+    } else {
+      // Permission already granted, just toggle on/off
+      const newValue = !notificationsEnabled;
+      console.log('Toggling notifications to:', newValue);
+      setNotificationsEnabled(newValue);
+      notificationsEnabledRef.current = newValue;
+    }
+  };
+
+  const startRestTimer = () => {
+    // Clear any existing timer
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+
+    setRestTimer(90); // 90 seconds (1 minute 30 seconds)
+
+    const interval = setInterval(() => {
+      setRestTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+
+          // Send notification if enabled
+          console.log('Rest timer complete. Notification check:', {
+            notificationsEnabledRef: notificationsEnabledRef.current,
+            notificationInWindow: 'Notification' in window,
+            permission: Notification.permission
+          });
+
+          if (notificationsEnabledRef.current && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              console.log('Sending rest complete notification...');
+              new Notification('Rest Complete! 💪', {
+                body: "Time to crush your next set! Let's go!",
+                vibrate: [200, 100, 200],
+              });
+            } catch (error) {
+              console.error('Error showing notification:', error);
+            }
+          } else {
+            console.log('Notification not sent - conditions not met');
+          }
+
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    setTimerInterval(interval);
+  };
+
+  const handleExerciseWeightChange = (exerciseIdx, value) => {
+    const newExercises = [...currentExercises];
+    newExercises[exerciseIdx].workingWeight = formatWeight(parseFloat(value) || 0);
+    // Weight is now captured per-set when button is clicked, not synced to all sets
+    setCurrentExercises(newExercises);
+    updateActiveWorkout({ exercises: newExercises });
+  };
+
+  const handleIncrementExerciseWeight = (exerciseIdx, amount) => {
+    const currentWeight = currentExercises[exerciseIdx].workingWeight || 0;
+    const newWeight = Math.max(0, currentWeight + amount);
+    handleExerciseWeightChange(exerciseIdx, newWeight);
+  };
+
+  const handleSetClick = (exerciseIdx, setIdx) => {
+    const newExercises = [...currentExercises];
+    const set = newExercises[exerciseIdx].sets[setIdx];
+    const exercise = newExercises[exerciseIdx];
+
+    if (set.reps === 0 && !set.completed) {
+      // First click: Mark as completed and capture current weight
+      set.reps = set.maxReps;
+      set.completed = true;
+      set.completedReps = set.maxReps;
+      set.weight = exercise.workingWeight; // Capture weight at this moment
+
+      // Start rest timer
+      startRestTimer();
+    } else if (set.reps > 0 && set.completed) {
+      // Decrement reps (user didn't complete all reps)
+      set.reps -= 1;
+      set.completedReps = set.reps;
+      // Keep completed = true, weight stays unchanged
+    } else if (set.reps === 0 && set.completed) {
+      // Reset the set
+      set.reps = 0;
+      set.completed = false;
+      set.completedReps = 0;
+      set.weight = 0; // Clear the captured weight
+    }
+
+    setCurrentExercises(newExercises);
+    updateActiveWorkout({ exercises: newExercises });
+  };
+
+  const handleCompleteWorkout = () => {
+    completeWorkout();
+    navigate('/history');
+  };
+
+  const handleCancelWorkout = () => {
+    cancelWorkout();
+    navigate('/');
+  };
+
+  if (!activeWorkout) {
+    return null;
+  }
+
+  const totalSets = currentExercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+  const completedSets = currentExercises.reduce(
+    (sum, ex) => sum + ex.sets.filter((s) => s.completed).length,
+    0
+  );
+
+  return (
+    <Layout showNav={false}>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="bg-primary text-white p-6 sticky top-0 z-10 shadow-md">
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-xl font-bold">{activeWorkout.workoutName}</h1>
+            <button
+              onClick={() => setShowConfirmCancel(true)}
+              className="touch-target text-white hover:text-gray-200"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="text-sm opacity-90">
+            {completedSets} / {totalSets} sets completed
+          </div>
+          <div className="mt-2 bg-white/20 rounded-full h-2">
+            <div
+              className="bg-white h-full rounded-full transition-all duration-300"
+              style={{ width: `${(completedSets / totalSets) * 100}%` }}
+            />
+          </div>
+
+          {/* Rest Timer */}
+          {restTimer !== null && restTimer > 0 && (
+            <div className="text-center mt-3">
+              <div className="inline-block bg-white/20 rounded-lg px-4 py-2">
+                <span className="text-sm opacity-90">Rest: </span>
+                <span className="text-lg font-bold">
+                  {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Notification Toggle */}
+          {'Notification' in window && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <label className="flex items-center gap-2 cursor-pointer text-sm opacity-90 hover:opacity-100 transition-opacity">
+                <input
+                  type="checkbox"
+                  checked={notificationsEnabled}
+                  onChange={toggleNotifications}
+                  className="w-4 h-4 rounded cursor-pointer"
+                />
+                <span>Notify me when rest is done</span>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* Exercises */}
+        <div className="p-4 space-y-6 pb-24">
+          {currentExercises.map((exercise, exerciseIdx) => {
+            // Check if all sets have been started (clicked at least once)
+            const allSetsStarted = exercise.sets.every(set => set.reps > 0 || set.completed);
+
+            return (
+            <div key={exerciseIdx} className={`rounded-lg shadow-sm border-2 p-4 transition-all ${
+              allSetsStarted
+                ? 'bg-green-50 border-success'
+                : 'bg-white border-gray-200'
+            }`}>
+              {/* Exercise Header with Weight */}
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl">{exercise.emoji}</span>
+                  <h2 className="text-lg font-semibold text-gray-900 flex-1">
+                    {exercise.exerciseName}
+                  </h2>
+                </div>
+
+                {/* Single Weight Input for Exercise */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleIncrementExerciseWeight(exerciseIdx, -2.5)}
+                    className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
+                  >
+                    <Minus size={18} />
+                  </button>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={exercise.workingWeight || ''}
+                    onChange={(e) =>
+                      handleExerciseWeightChange(exerciseIdx, e.target.value)
+                    }
+                    placeholder="0"
+                    className="w-24 px-3 py-2 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  <span className="text-sm text-gray-600">kg</span>
+                  <button
+                    onClick={() => handleIncrementExerciseWeight(exerciseIdx, 2.5)}
+                    className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Set Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                {exercise.sets.map((set, setIdx) => {
+                  const isNotStarted = set.reps === 0 && !set.completed;
+                  const isCompleted = set.completed;
+
+                  return (
+                    <button
+                      key={setIdx}
+                      onClick={() => handleSetClick(exerciseIdx, setIdx)}
+                      className={`touch-target p-4 rounded-lg font-semibold transition-all ${
+                        isCompleted
+                          ? 'bg-success text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {isNotStarted && `Set ${set.setNumber}`}
+                      {isCompleted && `✓ ${set.completedReps}`}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            );
+          })}
+        </div>
+
+        {/* Complete Workout Button */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+          <div className="max-w-lg mx-auto">
+            <Button
+              variant="success"
+              size="lg"
+              fullWidth
+              onClick={handleCompleteWorkout}
+            >
+              Finish Workout
+            </Button>
+          </div>
+        </div>
+
+        {/* Cancel Confirmation Modal */}
+        {showConfirmCancel && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Cancel Workout?
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Your progress will not be saved. Are you sure you want to cancel?
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => setShowConfirmCancel(false)}
+                >
+                  Keep Going
+                </Button>
+                <Button
+                  variant="danger"
+                  fullWidth
+                  onClick={handleCancelWorkout}
+                >
+                  Cancel Workout
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+};
