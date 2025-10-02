@@ -137,6 +137,103 @@ export const Admin = () => {
     });
   };
 
+  const downloadBackup = () => {
+    try {
+      addLog('Creating backup...', 'info');
+
+      // Collect all workout tracker data
+      const backup = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        data: {
+          exercises: localStorage.getItem('workout_tracker_exercises'),
+          templates: localStorage.getItem('workout_tracker_templates'),
+          completedWorkouts: localStorage.getItem('workout_tracker_completed'),
+          preferences: localStorage.getItem('workout_tracker_preferences'),
+        }
+      };
+
+      // Convert to JSON string
+      const jsonString = JSON.stringify(backup, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Format filename with date
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `workout-backup-${date}.json`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      addLog('Backup downloaded successfully', 'success');
+    } catch (error) {
+      addLog(`Error creating backup: ${error.message}`, 'error');
+    }
+  };
+
+  const uploadBackup = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    addLog(`Reading backup file: ${file.name}`, 'info');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const backup = JSON.parse(e.target.result);
+
+        // Validate backup structure
+        if (!backup.version || !backup.data) {
+          throw new Error('Invalid backup file format');
+        }
+
+        addLog('Backup file validated', 'success');
+        addLog('Restoring data...', 'info');
+
+        // Restore all data
+        if (backup.data.exercises) {
+          localStorage.setItem('workout_tracker_exercises', backup.data.exercises);
+        }
+        if (backup.data.templates) {
+          localStorage.setItem('workout_tracker_templates', backup.data.templates);
+        }
+        if (backup.data.completedWorkouts) {
+          localStorage.setItem('workout_tracker_completed', backup.data.completedWorkouts);
+        }
+        if (backup.data.preferences) {
+          localStorage.setItem('workout_tracker_preferences', backup.data.preferences);
+        }
+
+        addLog('Data restored successfully!', 'success');
+        addLog('Reloading page...', 'info');
+
+        // Reload page after short delay to show success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        addLog(`Error restoring backup: ${error.message}`, 'error');
+      }
+    };
+
+    reader.onerror = () => {
+      addLog('Error reading backup file', 'error');
+    };
+
+    reader.readAsText(file);
+
+    // Reset file input
+    event.target.value = '';
+  };
+
   const getLogColor = (type) => {
     switch (type) {
       case 'success': return 'text-green-600';
@@ -219,6 +316,43 @@ export const Admin = () => {
                     <p className="text-sm text-gray-600">Notification will fire at 0</p>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Data Backup & Restore */}
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold mb-3">Data Backup & Restore</h2>
+            <div className="space-y-3">
+              <Button
+                variant="success"
+                fullWidth
+                onClick={downloadBackup}
+              >
+                📥 Download Backup
+              </Button>
+
+              <div>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={uploadBackup}
+                  style={{ display: 'none' }}
+                  id="backup-upload"
+                />
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={() => document.getElementById('backup-upload').click()}
+                >
+                  📤 Upload Backup
+                </Button>
+              </div>
+
+              <div className="border-t pt-3">
+                <p className="text-xs text-gray-500 mb-2">
+                  💾 Backup your workout data to keep it safe. You can restore it anytime.
+                </p>
               </div>
             </div>
           </div>
