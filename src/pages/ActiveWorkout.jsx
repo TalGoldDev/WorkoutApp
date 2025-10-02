@@ -5,6 +5,7 @@ import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
 import { Check, Minus, Plus, X } from 'lucide-react';
 import { formatWeight } from '../utils/helpers';
+import { getServiceWorkerRegistration } from '../utils/serviceWorkerRegistration';
 
 export const ActiveWorkout = () => {
   const navigate = useNavigate();
@@ -16,7 +17,10 @@ export const ActiveWorkout = () => {
   const [timerInterval, setTimerInterval] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState('default');
+  const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
   const notificationsEnabledRef = useRef(false);
+  const wakeLockRef = useRef(null);
+  const swRegistrationRef = useRef(null);
 
   useEffect(() => {
     if (!activeWorkout) {
@@ -26,7 +30,7 @@ export const ActiveWorkout = () => {
     setCurrentExercises(activeWorkout.exercises);
   }, [activeWorkout, navigate]);
 
-  // Check notification permission on mount
+  // Check notification permission and get service worker on mount
   useEffect(() => {
     if ('Notification' in window) {
       const currentPermission = Notification.permission;
@@ -37,6 +41,22 @@ export const ActiveWorkout = () => {
         notificationsEnabledRef.current = true;
       }
     }
+
+    // Get service worker registration
+    getServiceWorkerRegistration().then((registration) => {
+      if (registration) {
+        swRegistrationRef.current = registration;
+        console.log('Service worker registration available');
+      }
+    });
+
+    // Request wake lock when component mounts
+    requestWakeLock();
+
+    // Release wake lock when component unmounts
+    return () => {
+      releaseWakeLock();
+    };
   }, []);
 
   // Cleanup timer on unmount
@@ -45,6 +65,31 @@ export const ActiveWorkout = () => {
       if (timerInterval) clearInterval(timerInterval);
     };
   }, [timerInterval]);
+
+  const requestWakeLock = async () => {
+    if ('wakeLock' in navigator) {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        setWakeLockEnabled(true);
+        console.log('Wake Lock enabled - screen will stay on');
+
+        wakeLockRef.current.addEventListener('release', () => {
+          console.log('Wake Lock released');
+          setWakeLockEnabled(false);
+        });
+      } catch (error) {
+        console.error('Wake Lock error:', error);
+      }
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release();
+      wakeLockRef.current = null;
+      setWakeLockEnabled(false);
+    }
+  };
 
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
@@ -57,11 +102,20 @@ export const ActiveWorkout = () => {
         notificationsEnabledRef.current = true;
         console.log('Notifications enabled');
 
-        // Test notification immediately
+        // Test notification using service worker if available
         try {
-          new Notification('Notifications Enabled! 🔔', {
-            body: 'You will be notified when rest is complete.',
-          });
+          if (swRegistrationRef.current) {
+            await swRegistrationRef.current.showNotification('Notifications Enabled! 🔔', {
+              body: 'You will be notified when rest is complete.',
+              tag: 'test-notification',
+              requireInteraction: false,
+            });
+          } else {
+            // Fallback to regular notification
+            new Notification('Notifications Enabled! 🔔', {
+              body: 'You will be notified when rest is complete.',
+            });
+          }
         } catch (error) {
           console.error('Error showing test notification:', error);
         }
@@ -107,10 +161,22 @@ export const ActiveWorkout = () => {
           if (notificationsEnabledRef.current && 'Notification' in window && Notification.permission === 'granted') {
             try {
               console.log('Sending rest complete notification...');
-              new Notification('Rest Complete! 💪', {
-                body: "Time to crush your next set! Let's go!",
-                vibrate: [200, 100, 200],
-              });
+
+              // Use service worker notification if available (better for iOS Safari)
+              if (swRegistrationRef.current) {
+                swRegistrationRef.current.showNotification('Rest Complete! 💪', {
+                  body: "Time to crush your next set! Let's go!",
+                  tag: 'rest-complete',
+                  requireInteraction: false,
+                  vibrate: [200, 100, 200],
+                });
+              } else {
+                // Fallback to regular notification
+                new Notification('Rest Complete! 💪', {
+                  body: "Time to crush your next set! Let's go!",
+                  vibrate: [200, 100, 200],
+                });
+              }
             } catch (error) {
               console.error('Error showing notification:', error);
             }
@@ -224,6 +290,15 @@ export const ActiveWorkout = () => {
                 <span className="text-lg font-bold">
                   {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* Wake Lock Status */}
+          {wakeLockEnabled && (
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <div className="text-xs bg-green-500/20 text-green-100 px-3 py-1 rounded-full">
+                🔒 Screen locked on
               </div>
             </div>
           )}
