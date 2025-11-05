@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
-import { Check, Minus, Plus, X } from 'lucide-react';
+import { ExercisePersonalizationModal } from '../components/shared/ExercisePersonalizationModal';
+import { Check, Minus, Plus, X, Settings2 } from 'lucide-react';
 import { formatWeight } from '../utils/helpers';
 import { getServiceWorkerRegistration } from '../utils/serviceWorkerRegistration';
 
@@ -15,11 +16,19 @@ export const ActiveWorkout = () => {
     completeWorkout,
     cancelWorkout,
     savePersonalization,
+    getPersonalizedExercise,
+    resetPersonalization,
+    exercises,
   } = useWorkoutContext();
   const [currentExercises, setCurrentExercises] = useState([]);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [showSavePersonalization, setShowSavePersonalization] = useState(false);
   const [personalizedChanges, setPersonalizedChanges] = useState([]);
+  const [personalizationModal, setPersonalizationModal] = useState({
+    isOpen: false,
+    exerciseIndex: null,
+    exercise: null,
+  });
   const [restTimer, setRestTimer] = useState(null);
   const [timerInterval, setTimerInterval] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -245,49 +254,74 @@ export const ActiveWorkout = () => {
     updateActiveWorkout({ exercises: newExercises });
   };
 
-  const handleAddSet = (exerciseIdx) => {
+  const handleOpenSettings = (exerciseIdx) => {
+    const exercise = currentExercises[exerciseIdx];
+    setPersonalizationModal({
+      isOpen: true,
+      exerciseIndex: exerciseIdx,
+      exercise: {
+        id: exercise.exerciseId,
+        name: exercise.exerciseName,
+        emoji: exercise.emoji,
+      },
+    });
+  };
+
+  const handleSaveExerciseSettings = (config) => {
+    if (personalizationModal.exerciseIndex === null) return;
+
+    const exerciseIdx = personalizationModal.exerciseIndex;
     const newExercises = [...currentExercises];
     const exercise = newExercises[exerciseIdx];
-    const currentSetCount = exercise.sets.length;
 
-    // Add a new set with the same maxReps as existing sets
-    const maxReps = exercise.sets[0]?.maxReps || 12;
-    exercise.sets.push({
-      setNumber: currentSetCount + 1,
-      weight: 0,
-      reps: 0,
-      maxReps: maxReps,
-      completedReps: 0,
-      completed: false,
+    const oldSetsCount = exercise.sets.length;
+    const newSetsCount = config.sets;
+    const newMaxReps = config.maxReps; // Can be number or array
+
+    // Adjust sets array
+    if (newSetsCount > oldSetsCount) {
+      // Add new sets
+      for (let i = oldSetsCount; i < newSetsCount; i++) {
+        const maxReps = Array.isArray(newMaxReps) ? newMaxReps[i] : newMaxReps;
+        exercise.sets.push({
+          setNumber: i + 1,
+          weight: 0,
+          reps: 0,
+          maxReps: maxReps,
+          completedReps: 0,
+          completed: false,
+        });
+      }
+    } else if (newSetsCount < oldSetsCount) {
+      // Remove sets from the end
+      exercise.sets = exercise.sets.slice(0, newSetsCount);
+    }
+
+    // Update maxReps for all sets
+    exercise.sets.forEach((set, idx) => {
+      set.maxReps = Array.isArray(newMaxReps) ? newMaxReps[idx] : newMaxReps;
+      set.setNumber = idx + 1; // Ensure numbering is correct
     });
 
     setCurrentExercises(newExercises);
     updateActiveWorkout({ exercises: newExercises });
 
     // Track this change for personalization prompt
-    trackPersonalizationChange(exercise.exerciseId, exercise.sets.length, maxReps);
+    trackPersonalizationChange(exercise.exerciseId, config.sets, config.maxReps);
   };
 
-  const handleRemoveSet = (exerciseIdx) => {
-    const newExercises = [...currentExercises];
-    const exercise = newExercises[exerciseIdx];
-
-    if (exercise.sets.length > 1) {
-      // Remove the last set
-      exercise.sets.pop();
-
-      // Renumber remaining sets
-      exercise.sets.forEach((set, idx) => {
-        set.setNumber = idx + 1;
-      });
-
-      setCurrentExercises(newExercises);
-      updateActiveWorkout({ exercises: newExercises });
-
-      // Track this change for personalization prompt
-      const maxReps = exercise.sets[0]?.maxReps || 12;
-      trackPersonalizationChange(exercise.exerciseId, exercise.sets.length, maxReps);
+  const handleResetExerciseSettings = () => {
+    if (activeWorkout.workoutTemplateId && personalizationModal.exercise) {
+      resetPersonalization(activeWorkout.workoutTemplateId, personalizationModal.exercise.id);
     }
+  };
+
+  const handleCloseSettings = () => {
+    setPersonalizationModal({
+      isOpen: false,
+      exerciseIndex: null,
+      exercise: null,
+    });
   };
 
   const trackPersonalizationChange = (exerciseId, sets, maxReps) => {
@@ -426,28 +460,14 @@ export const ActiveWorkout = () => {
                   <h2 className="text-lg font-semibold text-gray-900 flex-1">
                     {exercise.exerciseName}
                   </h2>
-                  {/* Set Count Controls */}
-                  <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-2 py-1">
-                    <button
-                      onClick={() => handleRemoveSet(exerciseIdx)}
-                      disabled={exercise.sets.length <= 1}
-                      className="touch-target p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Remove set"
-                    >
-                      <Minus size={16} />
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
-                      {exercise.sets.length} sets
-                    </span>
-                    <button
-                      onClick={() => handleAddSet(exerciseIdx)}
-                      disabled={exercise.sets.length >= 10}
-                      className="touch-target p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Add set"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
+                  {/* Settings Icon */}
+                  <button
+                    onClick={() => handleOpenSettings(exerciseIdx)}
+                    className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
+                    title="Customize sets and reps"
+                  >
+                    <Settings2 size={20} />
+                  </button>
                 </div>
 
                 {/* Single Weight Input for Exercise */}
@@ -581,6 +601,32 @@ export const ActiveWorkout = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Exercise Personalization Modal */}
+        {personalizationModal.isOpen && personalizationModal.exercise && (
+          <ExercisePersonalizationModal
+            isOpen={personalizationModal.isOpen}
+            onClose={handleCloseSettings}
+            exercise={personalizationModal.exercise}
+            templateId={activeWorkout.workoutTemplateId || 'temp'}
+            currentConfig={
+              activeWorkout.workoutTemplateId
+                ? getPersonalizedExercise(activeWorkout.workoutTemplateId, personalizationModal.exercise.id)
+                : null
+            }
+            currentSetsInWorkout={
+              personalizationModal.exerciseIndex !== null
+                ? currentExercises[personalizationModal.exerciseIndex]?.sets
+                : null
+            }
+            defaultConfig={{
+              sets: exercises.find((e) => e.id === personalizationModal.exercise.id)?.defaultSets || 3,
+              maxReps: 12,
+            }}
+            onSave={handleSaveExerciseSettings}
+            onReset={handleResetExerciseSettings}
+          />
         )}
       </div>
     </Layout>

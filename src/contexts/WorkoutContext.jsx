@@ -88,7 +88,10 @@ export const WorkoutProvider = ({ children }) => {
         // Check for personalization
         const personalization = storage.getExercisePersonalization(template.id, ex.exerciseId);
         const setsCount = personalization?.sets || ex.sets;
-        const maxReps = personalization?.maxReps || 12;
+        const maxRepsConfig = personalization?.maxReps || 12;
+
+        // maxReps can be a number (applies to all sets) or an array (per-set values)
+        const isPerSetReps = Array.isArray(maxRepsConfig);
 
         return {
           exerciseId: ex.exerciseId,
@@ -99,7 +102,7 @@ export const WorkoutProvider = ({ children }) => {
             setNumber: i + 1,
             weight: 0, // Kept for backward compatibility with saved workouts
             reps: 0, // Current reps (decrements from maxReps)
-            maxReps: maxReps, // Target reps for this set (personalized or default to 12)
+            maxReps: isPerSetReps ? (maxRepsConfig[i] || 12) : maxRepsConfig, // Per-set or global maxReps
             completedReps: 0, // Actual reps completed
             completed: false,
           })),
