@@ -6,7 +6,7 @@ import { Dumbbell, Plus } from 'lucide-react';
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { workoutTemplates, startWorkout } = useWorkoutContext();
+  const { workoutTemplates, startWorkout, getPersonalizationCount } = useWorkoutContext();
 
   const handleStartWorkout = (template) => {
     startWorkout(template);
@@ -47,27 +47,39 @@ export const Home = () => {
               Pre-built Programs
             </h2>
             <div className="space-y-3">
-              {prebuiltTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    {template.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {template.exercises.length} exercises
-                  </p>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    fullWidth
-                    onClick={() => handleStartWorkout(template)}
+              {prebuiltTemplates.map((template) => {
+                const personalizationCount = getPersonalizationCount(template.id);
+
+                return (
+                  <div
+                    key={template.id}
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
                   >
-                    Start Workout
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900">
+                        {template.name}
+                      </h3>
+                      {personalizationCount > 0 && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1">
+                          <span>⭐</span>
+                          <span>{personalizationCount}</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {template.exercises.length} exercises
+                    </p>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => handleStartWorkout(template)}
+                    >
+                      Start Workout
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -79,27 +91,39 @@ export const Home = () => {
               My Workouts
             </h2>
             <div className="space-y-3">
-              {customTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    {template.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {template.exercises.length} exercises
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    fullWidth
-                    onClick={() => handleStartWorkout(template)}
+              {customTemplates.map((template) => {
+                const personalizationCount = getPersonalizationCount(template.id);
+
+                return (
+                  <div
+                    key={template.id}
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
                   >
-                    Start Workout
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900">
+                        {template.name}
+                      </h3>
+                      {personalizationCount > 0 && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1">
+                          <span>⭐</span>
+                          <span>{personalizationCount}</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {template.exercises.length} exercises
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => handleStartWorkout(template)}
+                    >
+                      Start Workout
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

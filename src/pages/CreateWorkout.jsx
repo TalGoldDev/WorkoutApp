@@ -3,15 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
-import { ArrowLeft, Plus, X, GripVertical } from 'lucide-react';
+import { ExercisePersonalizationModal } from '../components/shared/ExercisePersonalizationModal';
+import { ArrowLeft, Plus, X, GripVertical, Settings2 } from 'lucide-react';
 
 export const CreateWorkout = () => {
   const navigate = useNavigate();
-  const { exercises, addTemplate, startWorkout } = useWorkoutContext();
+  const {
+    exercises,
+    addTemplate,
+    startWorkout,
+    savePersonalization,
+    getPersonalizedExercise,
+    resetPersonalization,
+  } = useWorkoutContext();
   const [workoutName, setWorkoutName] = useState('');
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [showExerciseList, setShowExerciseList] = useState(false);
   const [error, setError] = useState('');
+  const [personalizationModal, setPersonalizationModal] = useState({
+    isOpen: false,
+    exercise: null,
+    templateId: null,
+  });
 
   const handleAddExercise = (exercise) => {
     if (selectedExercises.find((e) => e.exerciseId === exercise.id)) {
@@ -85,6 +98,59 @@ export const CreateWorkout = () => {
     navigate('/active-workout');
   };
 
+  const handleOpenPersonalization = (exercise, templateId) => {
+    setPersonalizationModal({
+      isOpen: true,
+      exercise: {
+        id: exercise.exerciseId,
+        name: exercise.exerciseName,
+        emoji: exercise.emoji,
+      },
+      templateId: templateId || 'temp', // Use 'temp' for unsaved templates
+    });
+  };
+
+  const handleSavePersonalization = (config) => {
+    if (personalizationModal.templateId && personalizationModal.exercise) {
+      savePersonalization(personalizationModal.templateId, personalizationModal.exercise.id, config);
+
+      // Update the selected exercise with the new sets value
+      setSelectedExercises(
+        selectedExercises.map((e) =>
+          e.exerciseId === personalizationModal.exercise.id
+            ? { ...e, sets: config.sets }
+            : e
+        )
+      );
+    }
+  };
+
+  const handleResetPersonalization = () => {
+    if (personalizationModal.templateId && personalizationModal.exercise) {
+      resetPersonalization(personalizationModal.templateId, personalizationModal.exercise.id);
+
+      // Reset to default sets from exercise
+      const exercise = exercises.find((e) => e.id === personalizationModal.exercise.id);
+      if (exercise) {
+        setSelectedExercises(
+          selectedExercises.map((e) =>
+            e.exerciseId === personalizationModal.exercise.id
+              ? { ...e, sets: exercise.defaultSets }
+              : e
+          )
+        );
+      }
+    }
+  };
+
+  const handleClosePersonalization = () => {
+    setPersonalizationModal({
+      isOpen: false,
+      exercise: null,
+      templateId: null,
+    });
+  };
+
   return (
     <Layout showNav={false}>
       <div className="p-6">
@@ -132,37 +198,56 @@ export const CreateWorkout = () => {
             </p>
           ) : (
             <div className="space-y-2">
-              {selectedExercises.map((exercise) => (
-                <div
-                  key={exercise.exerciseId}
-                  className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3"
-                >
-                  <GripVertical size={20} className="text-gray-400" />
-                  <span className="text-2xl">{exercise.emoji}</span>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{exercise.exerciseName}</p>
+              {selectedExercises.map((exercise) => {
+                const personalization = getPersonalizedExercise('temp', exercise.exerciseId);
+                const isPersonalized = personalization !== null;
+
+                return (
+                  <div
+                    key={exercise.exerciseId}
+                    className={`bg-white border rounded-lg p-4 flex items-center gap-3 ${
+                      isPersonalized ? 'border-blue-400 border-2' : 'border-gray-200'
+                    }`}
+                  >
+                    <GripVertical size={20} className="text-gray-400" />
+                    <span className="text-2xl">{exercise.emoji}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">{exercise.exerciseName}</p>
+                        {isPersonalized && (
+                          <span className="text-blue-500 text-xs">⭐</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={exercise.sets}
+                        onChange={(e) => handleUpdateSets(exercise.exerciseId, e.target.value)}
+                        className="px-3 py-1 border border-gray-300 rounded text-sm"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                          <option key={num} value={num}>
+                            {num} sets
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleOpenPersonalization(exercise, 'temp')}
+                        className="touch-target text-gray-500 hover:text-primary"
+                        title="Customize exercise"
+                      >
+                        <Settings2 size={20} />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveExercise(exercise.exerciseId)}
+                        className="touch-target text-red-500 hover:text-red-700"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={exercise.sets}
-                      onChange={(e) => handleUpdateSets(exercise.exerciseId, e.target.value)}
-                      className="px-3 py-1 border border-gray-300 rounded text-sm"
-                    >
-                      {[1, 2, 3, 4, 5].map((num) => (
-                        <option key={num} value={num}>
-                          {num} sets
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleRemoveExercise(exercise.exerciseId)}
-                      className="touch-target text-red-500 hover:text-red-700"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -228,6 +313,26 @@ export const CreateWorkout = () => {
           </Button>
         </div>
       </div>
+
+      {/* Personalization Modal */}
+      {personalizationModal.isOpen && personalizationModal.exercise && (
+        <ExercisePersonalizationModal
+          isOpen={personalizationModal.isOpen}
+          onClose={handleClosePersonalization}
+          exercise={personalizationModal.exercise}
+          templateId={personalizationModal.templateId}
+          currentConfig={getPersonalizedExercise(
+            personalizationModal.templateId,
+            personalizationModal.exercise.id
+          )}
+          defaultConfig={{
+            sets: exercises.find((e) => e.id === personalizationModal.exercise.id)?.defaultSets || 3,
+            maxReps: 12,
+          }}
+          onSave={handleSavePersonalization}
+          onReset={handleResetPersonalization}
+        />
+      )}
     </Layout>
   );
 };

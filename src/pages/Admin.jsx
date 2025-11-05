@@ -143,13 +143,14 @@ export const Admin = () => {
 
       // Collect all workout tracker data
       const backup = {
-        version: '1.0',
+        version: '1.1', // Bumped version for personalization support
         timestamp: new Date().toISOString(),
         data: {
           exercises: localStorage.getItem('workout_tracker_exercises'),
           templates: localStorage.getItem('workout_tracker_templates'),
           completedWorkouts: localStorage.getItem('workout_tracker_completed'),
           preferences: localStorage.getItem('workout_tracker_preferences'),
+          personalizations: localStorage.getItem('workout_tracker_template_personalizations'),
         }
       };
 
@@ -209,6 +210,9 @@ export const Admin = () => {
         }
         if (backup.data.preferences) {
           localStorage.setItem('workout_tracker_preferences', backup.data.preferences);
+        }
+        if (backup.data.personalizations) {
+          localStorage.setItem('workout_tracker_template_personalizations', backup.data.personalizations);
         }
 
         addLog('Data restored successfully!', 'success');

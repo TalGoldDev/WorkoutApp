@@ -9,10 +9,17 @@ import { getServiceWorkerRegistration } from '../utils/serviceWorkerRegistration
 
 export const ActiveWorkout = () => {
   const navigate = useNavigate();
-  const { activeWorkout, updateActiveWorkout, completeWorkout, cancelWorkout } =
-    useWorkoutContext();
+  const {
+    activeWorkout,
+    updateActiveWorkout,
+    completeWorkout,
+    cancelWorkout,
+    savePersonalization,
+  } = useWorkoutContext();
   const [currentExercises, setCurrentExercises] = useState([]);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [showSavePersonalization, setShowSavePersonalization] = useState(false);
+  const [personalizedChanges, setPersonalizedChanges] = useState([]);
   const [restTimer, setRestTimer] = useState(null);
   const [timerInterval, setTimerInterval] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -238,7 +245,88 @@ export const ActiveWorkout = () => {
     updateActiveWorkout({ exercises: newExercises });
   };
 
+  const handleAddSet = (exerciseIdx) => {
+    const newExercises = [...currentExercises];
+    const exercise = newExercises[exerciseIdx];
+    const currentSetCount = exercise.sets.length;
+
+    // Add a new set with the same maxReps as existing sets
+    const maxReps = exercise.sets[0]?.maxReps || 12;
+    exercise.sets.push({
+      setNumber: currentSetCount + 1,
+      weight: 0,
+      reps: 0,
+      maxReps: maxReps,
+      completedReps: 0,
+      completed: false,
+    });
+
+    setCurrentExercises(newExercises);
+    updateActiveWorkout({ exercises: newExercises });
+
+    // Track this change for personalization prompt
+    trackPersonalizationChange(exercise.exerciseId, exercise.sets.length, maxReps);
+  };
+
+  const handleRemoveSet = (exerciseIdx) => {
+    const newExercises = [...currentExercises];
+    const exercise = newExercises[exerciseIdx];
+
+    if (exercise.sets.length > 1) {
+      // Remove the last set
+      exercise.sets.pop();
+
+      // Renumber remaining sets
+      exercise.sets.forEach((set, idx) => {
+        set.setNumber = idx + 1;
+      });
+
+      setCurrentExercises(newExercises);
+      updateActiveWorkout({ exercises: newExercises });
+
+      // Track this change for personalization prompt
+      const maxReps = exercise.sets[0]?.maxReps || 12;
+      trackPersonalizationChange(exercise.exerciseId, exercise.sets.length, maxReps);
+    }
+  };
+
+  const trackPersonalizationChange = (exerciseId, sets, maxReps) => {
+    setPersonalizedChanges((prev) => {
+      const existing = prev.find((c) => c.exerciseId === exerciseId);
+      if (existing) {
+        return prev.map((c) =>
+          c.exerciseId === exerciseId ? { ...c, sets, maxReps } : c
+        );
+      }
+      return [...prev, { exerciseId, sets, maxReps }];
+    });
+  };
+
   const handleCompleteWorkout = () => {
+    // Check if there are any personalized changes
+    if (personalizedChanges.length > 0 && activeWorkout.workoutTemplateId) {
+      setShowSavePersonalization(true);
+    } else {
+      completeWorkout();
+      navigate('/history');
+    }
+  };
+
+  const handleSaveAndComplete = () => {
+    // Save all personalizations
+    if (activeWorkout.workoutTemplateId) {
+      personalizedChanges.forEach((change) => {
+        savePersonalization(activeWorkout.workoutTemplateId, change.exerciseId, {
+          sets: change.sets,
+          maxReps: change.maxReps,
+        });
+      });
+    }
+    completeWorkout();
+    navigate('/history');
+  };
+
+  const handleCompleteWithoutSaving = () => {
     completeWorkout();
     navigate('/history');
   };
@@ -338,6 +426,28 @@ export const ActiveWorkout = () => {
                   <h2 className="text-lg font-semibold text-gray-900 flex-1">
                     {exercise.exerciseName}
                   </h2>
+                  {/* Set Count Controls */}
+                  <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-2 py-1">
+                    <button
+                      onClick={() => handleRemoveSet(exerciseIdx)}
+                      disabled={exercise.sets.length <= 1}
+                      className="touch-target p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Remove set"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
+                      {exercise.sets.length} sets
+                    </span>
+                    <button
+                      onClick={() => handleAddSet(exerciseIdx)}
+                      disabled={exercise.sets.length >= 10}
+                      className="touch-target p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Add set"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Single Weight Input for Exercise */}
@@ -433,6 +543,40 @@ export const ActiveWorkout = () => {
                   onClick={handleCancelWorkout}
                 >
                   Cancel Workout
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Save Personalization Modal */}
+        {showSavePersonalization && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+              <div className="text-center mb-4">
+                <span className="text-4xl">⭐</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                Save Your Changes?
+              </h3>
+              <p className="text-gray-600 mb-6 text-center">
+                You modified {personalizedChanges.length} exercise{personalizedChanges.length > 1 ? 's' : ''}.
+                Save these changes for next time?
+              </p>
+              <div className="space-y-3">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={handleSaveAndComplete}
+                >
+                  Save & Finish
+                </Button>
+                <Button
+                  variant="ghost"
+                  fullWidth
+                  onClick={handleCompleteWithoutSaving}
+                >
+                  Finish Without Saving
                 </Button>
               </div>
             </div>
