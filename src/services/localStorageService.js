@@ -330,6 +330,130 @@ export const getPersonalizationCount = (templateId) => {
   return Object.keys(templatePersonalizations).length;
 };
 
+// ============= WEIGHT RECOMMENDATION SYSTEM =============
+
+/**
+ * Check if user should increase weight for an exercise
+ * Returns true if the last 2 workouts had ALL sets completed with max reps
+ */
+export const shouldIncreaseWeight = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Filter workouts that contain this exercise
+  const workoutsWithExercise = workouts.filter((workout) => {
+    return workout.exercises.some((ex) => ex.exerciseId === exerciseId);
+  });
+
+  // Need at least 2 workouts to check
+  if (workoutsWithExercise.length < 2) {
+    return false;
+  }
+
+  // Check the last 2 workouts (workouts are already sorted by date descending)
+  const lastTwoWorkouts = workoutsWithExercise.slice(0, 2);
+
+  // Both workouts must have ALL sets completed with max reps
+  for (const workout of lastTwoWorkouts) {
+    const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
+
+    if (!exercise || !exercise.sets || exercise.sets.length === 0) {
+      return false;
+    }
+
+    // Check if ALL sets were completed with max reps
+    const allSetsMaxReps = exercise.sets.every((set) => {
+      return set.completed && set.completedReps === set.maxReps;
+    });
+
+    if (!allSetsMaxReps) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Check if user should reduce weight for an exercise
+ * Returns true if the last 3 workouts had at least one set that failed to complete max reps
+ */
+export const shouldReduceWeight = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Filter workouts that contain this exercise
+  const workoutsWithExercise = workouts.filter((workout) => {
+    return workout.exercises.some((ex) => ex.exerciseId === exerciseId);
+  });
+
+  // Need at least 3 workouts to check
+  if (workoutsWithExercise.length < 3) {
+    return false;
+  }
+
+  // Check the last 3 workouts (workouts are already sorted by date descending)
+  const lastThreeWorkouts = workoutsWithExercise.slice(0, 3);
+
+  // All 3 workouts must have at least one failed set
+  for (const workout of lastThreeWorkouts) {
+    const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
+
+    if (!exercise || !exercise.sets || exercise.sets.length === 0) {
+      return false;
+    }
+
+    // Check if at least one set failed (not completed OR completed but less than max reps)
+    const hasFailedSet = exercise.sets.some((set) => {
+      return !set.completed || set.completedReps < set.maxReps;
+    });
+
+    if (!hasFailedSet) {
+      // If any workout doesn't have a failed set, don't recommend reducing
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Get weight recommendation for an exercise
+ * Returns 'increase', 'decrease', or null
+ * Note: Increase takes precedence over decrease (mutually exclusive)
+ */
+export const getWeightRecommendation = (exerciseId) => {
+  if (shouldIncreaseWeight(exerciseId)) {
+    return 'increase';
+  }
+
+  if (shouldReduceWeight(exerciseId)) {
+    return 'decrease';
+  }
+
+  return null;
+};
+
+/**
+ * Get the last used weight for an exercise
+ * Returns the weight from the most recent workout, or 0 if no history exists
+ */
+export const getLastUsedWeight = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Find the most recent workout that contains this exercise
+  for (const workout of workouts) {
+    const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
+
+    if (exercise && exercise.sets && exercise.sets.length > 0) {
+      // Get the weight from the first set (or could use max weight)
+      // Using first set as it represents the working weight for that session
+      const weight = exercise.sets[0].weight || 0;
+      return weight;
+    }
+  }
+
+  return 0; // No history found
+};
+
 // ============= SEED DATA =============
 
 /**
