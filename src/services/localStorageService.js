@@ -454,6 +454,50 @@ export const getLastUsedWeight = (exerciseId) => {
   return 0; // No history found
 };
 
+/**
+ * Get the total reps completed for an exercise during the current week
+ * Returns the sum of all completed reps from the current week (Monday to Sunday)
+ */
+export const getWeeklyRepsSum = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Get the start of the current week (Monday at 00:00:00)
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - daysFromMonday);
+  weekStart.setHours(0, 0, 0, 0);
+
+  // Get the end of the current week (Sunday at 23:59:59)
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  let totalReps = 0;
+
+  // Filter workouts from current week and sum reps
+  workouts.forEach((workout) => {
+    const workoutDate = new Date(workout.completedAt);
+
+    // Check if workout is in current week
+    if (workoutDate >= weekStart && workoutDate <= weekEnd) {
+      const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
+
+      if (exercise && exercise.sets && exercise.sets.length > 0) {
+        // Sum all completed reps from all sets
+        exercise.sets.forEach((set) => {
+          if (set.completed && set.completedReps) {
+            totalReps += set.completedReps;
+          }
+        });
+      }
+    }
+  });
+
+  return totalReps;
+};
+
 // ============= SEED DATA =============
 
 /**

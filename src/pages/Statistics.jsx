@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
-import { getExerciseHistory } from '../services/localStorageService';
+import { getExerciseHistory, getWeeklyRepsSum } from '../services/localStorageService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, Target, Calendar, ArrowUp } from 'lucide-react';
+import { TrendingUp, Target, Calendar, ArrowUp, Hash } from 'lucide-react';
 
 export const Statistics = () => {
   const { exercises, completedWorkouts } = useWorkoutContext();
@@ -50,6 +50,12 @@ export const Statistics = () => {
       percentageIncrease: percentageIncrease.toFixed(1),
     };
   }, [historyData]);
+
+  // Calculate weekly reps sum
+  const weeklyReps = useMemo(() => {
+    if (!selectedExerciseId) return 0;
+    return getWeeklyRepsSum(selectedExerciseId);
+  }, [selectedExerciseId]);
 
   if (performedExercises.length === 0) {
     return (
@@ -167,6 +173,16 @@ export const Statistics = () => {
                 </div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {stats.startingWeight} kg
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 col-span-2">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
+                  <Hash size={16} />
+                  <span className="text-sm">This Week's Reps</span>
+                </div>
+                <p className="text-2xl font-bold text-primary dark:text-blue-400">
+                  {weeklyReps} reps
                 </p>
               </div>
             </div>
