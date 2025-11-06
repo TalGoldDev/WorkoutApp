@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, History, BarChart3, Settings } from 'lucide-react';
+import { Home, History, BarChart3 } from 'lucide-react';
 
 export const NavBar = () => {
   const location = useLocation();
@@ -8,7 +8,6 @@ export const NavBar = () => {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/history', icon: History, label: 'History' },
     { path: '/statistics', icon: BarChart3, label: 'Stats' },
-    { path: '/admin', icon: Settings, label: 'Admin', isDebug: true },
   ];
 
   const isActive = (path) => location.pathname === path;
