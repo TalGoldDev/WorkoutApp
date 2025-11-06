@@ -145,7 +145,7 @@ export const ExerciseSwitcherModal = ({
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">{exercise.emoji}</span>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-gray-900 dark:text-white">
                             {exercise.name}
                           </h3>
@@ -158,6 +158,11 @@ export const ExerciseSwitcherModal = ({
                           {isInWorkout && !isCurrentExercise && (
                             <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
                               In workout
+                            </span>
+                          )}
+                          {exercise.isCustom && (
+                            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
+                              Custom
                             </span>
                           )}
                         </div>

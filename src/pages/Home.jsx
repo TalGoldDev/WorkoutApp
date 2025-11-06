@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
-import { Dumbbell, Plus } from 'lucide-react';
+import { Dumbbell, Plus, ListPlus } from 'lucide-react';
 
 export const Home = () => {
   const navigate = useNavigate();
@@ -33,10 +33,19 @@ export const Home = () => {
             size="lg"
             fullWidth
             onClick={() => navigate('/create-workout')}
-            className="mb-4"
+            className="mb-3"
           >
             <Plus size={20} className="inline mr-2" />
             Create New Workout
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            onClick={() => navigate('/custom-exercises')}
+          >
+            <ListPlus size={20} className="inline mr-2" />
+            Manage Custom Exercises
           </Button>
         </div>
 
