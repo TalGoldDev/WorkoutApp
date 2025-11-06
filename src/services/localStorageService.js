@@ -156,6 +156,53 @@ export const getExerciseHistory = (exerciseId) => {
   return history.sort((a, b) => new Date(a.date) - new Date(b.date));
 };
 
+/**
+ * Update an existing completed workout
+ */
+export const updateCompletedWorkout = (id, updatedWorkout) => {
+  const workouts = getCompletedWorkouts();
+  const index = workouts.findIndex((w) => w.id === id);
+  if (index !== -1) {
+    workouts[index] = { ...workouts[index], ...updatedWorkout };
+    // Re-sort by completedAt descending (most recent first)
+    workouts.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+    return saveCompletedWorkouts(workouts);
+  }
+  return false;
+};
+
+/**
+ * Delete a completed workout
+ */
+export const deleteCompletedWorkout = (id) => {
+  const workouts = getCompletedWorkouts();
+  const filtered = workouts.filter((w) => w.id !== id);
+  return saveCompletedWorkouts(filtered);
+};
+
+/**
+ * Check if a workout can be edited (within 2 days of completion)
+ */
+export const isWorkoutEditable = (completedAt) => {
+  const now = new Date();
+  const workoutDate = new Date(completedAt);
+  const diffInMs = now - workoutDate;
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  return diffInHours <= 48; // 2 days = 48 hours
+};
+
+/**
+ * Get remaining hours until workout can no longer be edited
+ */
+export const getEditableHoursRemaining = (completedAt) => {
+  const now = new Date();
+  const workoutDate = new Date(completedAt);
+  const diffInMs = now - workoutDate;
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  const remaining = 48 - diffInHours;
+  return remaining > 0 ? Math.ceil(remaining) : 0;
+};
+
 // ============= PREFERENCES =============
 
 export const getPreferences = () => {
