@@ -4,7 +4,7 @@ import { Layout } from '../components/shared/Layout';
 import { getExerciseHistory } from '../services/localStorageService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, Target, Calendar } from 'lucide-react';
+import { TrendingUp, Target, Calendar, ArrowUp } from 'lucide-react';
 
 export const Statistics = () => {
   const { exercises, completedWorkouts } = useWorkoutContext();
@@ -105,6 +105,28 @@ export const Statistics = () => {
             ))}
           </select>
         </div>
+
+        {/* Prompt to Select Exercise */}
+        {!selectedExerciseId && (
+          <div className="text-center py-16">
+            <div className="relative">
+              {/* Animated Arrow */}
+              <div className="absolute left-1/2 -translate-x-1/2 -top-12 animate-bounce">
+                <ArrowUp size={48} className="text-primary dark:text-blue-400" />
+              </div>
+
+              {/* Message */}
+              <div className="mt-4">
+                <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Select an exercise to display
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Choose from the dropdown above to view your progress
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats and Graph */}
         {selectedExerciseId && historyData.length > 0 && stats && (
