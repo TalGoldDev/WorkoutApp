@@ -240,52 +240,52 @@ export const Admin = () => {
 
   const getLogColor = (type) => {
     switch (type) {
-      case 'success': return 'text-green-600';
-      case 'error': return 'text-red-600';
-      case 'info': return 'text-blue-600';
-      default: return 'text-gray-600';
+      case 'success': return 'text-green-600 dark:text-green-400';
+      case 'error': return 'text-red-600 dark:text-red-400';
+      case 'info': return 'text-blue-600 dark:text-blue-400';
+      default: return 'text-gray-600 dark:text-gray-400';
     }
   };
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background p-4 pb-20">
+      <div className="min-h-screen bg-background dark:bg-gray-900 p-4 pb-20">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Header */}
-          <div className="bg-red-100 border-2 border-red-500 rounded-lg p-4">
-            <h1 className="text-2xl font-bold text-red-700">Admin / Debug Panel</h1>
-            <p className="text-sm text-red-600 mt-1">For testing and debugging only</p>
+          <div className="bg-red-100 dark:bg-red-900/30 border-2 border-red-500 dark:border-red-600 rounded-lg p-4">
+            <h1 className="text-2xl font-bold text-red-700 dark:text-red-400">Admin / Debug Panel</h1>
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">For testing and debugging only</p>
           </div>
 
           {/* System Info */}
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <h2 className="text-lg font-semibold mb-3">System Information</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">System Information</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="font-medium">Notification API:</span>
-                <span className={('Notification' in window) ? 'text-green-600' : 'text-red-600'}>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Notification API:</span>
+                <span className={('Notification' in window) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                   {('Notification' in window) ? '✓ Supported' : '✗ Not Supported'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium">Permission Status:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Permission Status:</span>
                 <span className={`font-semibold ${
-                  notificationPermission === 'granted' ? 'text-green-600' :
-                  notificationPermission === 'denied' ? 'text-red-600' : 'text-yellow-600'
+                  notificationPermission === 'granted' ? 'text-green-600 dark:text-green-400' :
+                  notificationPermission === 'denied' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
                 }`}>
                   {notificationPermission}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium">Browser:</span>
-                <span>{navigator.userAgent.split(' ').pop()}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Browser:</span>
+                <span className="text-gray-900 dark:text-white">{navigator.userAgent.split(' ').pop()}</span>
               </div>
             </div>
           </div>
 
           {/* Notification Tests */}
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <h2 className="text-lg font-semibold mb-3">Notification Tests</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Notification Tests</h2>
             <div className="space-y-3">
               <Button
                 variant="primary"
@@ -316,8 +316,8 @@ export const Admin = () => {
                 </Button>
                 {testTimerActive && (
                   <div className="mt-2 text-center">
-                    <div className="text-3xl font-bold text-primary">{testTimerCount}</div>
-                    <p className="text-sm text-gray-600">Notification will fire at 0</p>
+                    <div className="text-3xl font-bold text-primary dark:text-blue-400">{testTimerCount}</div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Notification will fire at 0</p>
                   </div>
                 )}
               </div>
@@ -325,8 +325,8 @@ export const Admin = () => {
           </div>
 
           {/* Data Backup & Restore */}
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <h2 className="text-lg font-semibold mb-3">Data Backup & Restore</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Data Backup & Restore</h2>
             <div className="space-y-3">
               <Button
                 variant="success"
@@ -353,8 +353,8 @@ export const Admin = () => {
                 </Button>
               </div>
 
-              <div className="border-t pt-3">
-                <p className="text-xs text-gray-500 mb-2">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   💾 Backup your workout data to keep it safe. You can restore it anytime.
                 </p>
               </div>
@@ -362,8 +362,8 @@ export const Admin = () => {
           </div>
 
           {/* Data Management */}
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <h2 className="text-lg font-semibold mb-3">Data Management</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Data Management</h2>
             <div className="space-y-3">
               <Button
                 variant="ghost"
@@ -384,23 +384,23 @@ export const Admin = () => {
           </div>
 
           {/* Logs */}
-          <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">Activity Logs</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Activity Logs</h2>
               <button
                 onClick={clearLogs}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               >
                 Clear
               </button>
             </div>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {logs.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No logs yet. Run a test to see logs.</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic">No logs yet. Run a test to see logs.</p>
               ) : (
                 logs.map(log => (
-                  <div key={log.id} className="text-xs font-mono border-l-2 border-gray-300 pl-2 py-1">
-                    <span className="text-gray-400">[{log.timestamp}]</span>{' '}
+                  <div key={log.id} className="text-xs font-mono border-l-2 border-gray-300 dark:border-gray-600 pl-2 py-1">
+                    <span className="text-gray-400 dark:text-gray-500">[{log.timestamp}]</span>{' '}
                     <span className={getLogColor(log.type)}>{log.message}</span>
                   </div>
                 ))

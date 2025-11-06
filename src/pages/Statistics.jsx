@@ -55,11 +55,11 @@ export const Statistics = () => {
     return (
       <Layout>
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Statistics</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Statistics</h1>
           <div className="text-center py-12">
-            <TrendingUp size={48} className="mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500">No exercise data yet</p>
-            <p className="text-sm text-gray-400 mt-2">
+            <TrendingUp size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-600" />
+            <p className="text-gray-500 dark:text-gray-400">No exercise data yet</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
               Complete workouts to see your progress
             </p>
           </div>
@@ -71,17 +71,17 @@ export const Statistics = () => {
   return (
     <Layout>
       <div className="p-6 pb-24">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Statistics</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Statistics</h1>
 
         {/* Exercise Selector */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Select Exercise
           </label>
           <select
             value={selectedExerciseId}
             onChange={(e) => setSelectedExerciseId(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             <option value="">Choose an exercise...</option>
             {performedExercises.map((exercise) => (
@@ -97,54 +97,54 @@ export const Statistics = () => {
           <>
             {/* Key Metrics */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center gap-2 text-gray-600 mb-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
                   <Target size={16} />
                   <span className="text-sm">Current Max</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {stats.currentMax} kg
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center gap-2 text-gray-600 mb-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
                   <TrendingUp size={16} />
                   <span className="text-sm">Progress</span>
                 </div>
-                <p className="text-2xl font-bold text-success">
+                <p className="text-2xl font-bold text-success dark:text-green-400">
                   +{stats.percentageIncrease}%
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center gap-2 text-gray-600 mb-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
                   <Calendar size={16} />
                   <span className="text-sm">Workouts</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {stats.totalWorkouts}
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center gap-2 text-gray-600 mb-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
                   <span className="text-sm">Starting</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {stats.startingWeight} kg
                 </p>
               </div>
             </div>
 
             {/* Progress Graph */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
                 Weight Progress Over Time
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={historyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
                   <XAxis
                     dataKey="date"
                     tick={{ fill: '#6b7280', fontSize: 12 }}
@@ -178,7 +178,7 @@ export const Statistics = () => {
 
         {selectedExerciseId && historyData.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No data for this exercise yet</p>
+            <p className="text-gray-500 dark:text-gray-400">No data for this exercise yet</p>
           </div>
         )}
       </div>
