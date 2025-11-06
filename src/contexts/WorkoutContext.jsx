@@ -16,6 +16,7 @@ export const WorkoutProvider = ({ children }) => {
   const [workoutTemplates, setWorkoutTemplates] = useState([]);
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [activeWorkout, setActiveWorkout] = useState(null);
+  const [templatePersonalizations, setTemplatePersonalizations] = useState({});
 
   // Load data on mount
   useEffect(() => {
@@ -23,6 +24,7 @@ export const WorkoutProvider = ({ children }) => {
     setExercises(storage.getExercises());
     setWorkoutTemplates(storage.getWorkoutTemplates());
     setCompletedWorkouts(storage.getCompletedWorkouts());
+    setTemplatePersonalizations(storage.getTemplatePersonalizations());
   }, []);
 
   // Exercise methods
@@ -68,7 +70,9 @@ export const WorkoutProvider = ({ children }) => {
 
   const deleteTemplate = (id) => {
     storage.deleteWorkoutTemplate(id);
+    storage.deleteTemplatePersonalizations(id); // Clean up personalizations
     setWorkoutTemplates(storage.getWorkoutTemplates());
+    setTemplatePersonalizations(storage.getTemplatePersonalizations());
   };
 
   // Active workout methods
@@ -80,16 +84,25 @@ export const WorkoutProvider = ({ children }) => {
       startTime: new Date().toISOString(),
       exercises: template.exercises.map((ex) => {
         const exercise = exercises.find((e) => e.id === ex.exerciseId);
+
+        // Check for personalization
+        const personalization = storage.getExercisePersonalization(template.id, ex.exerciseId);
+        const setsCount = personalization?.sets || ex.sets;
+        const maxRepsConfig = personalization?.maxReps || 12;
+
+        // maxReps can be a number (applies to all sets) or an array (per-set values)
+        const isPerSetReps = Array.isArray(maxRepsConfig);
+
         return {
           exerciseId: ex.exerciseId,
           exerciseName: exercise?.name || 'Unknown',
           emoji: exercise?.emoji || '',
           workingWeight: 0, // Single weight for the entire exercise
-          sets: Array.from({ length: ex.sets }, (_, i) => ({
+          sets: Array.from({ length: setsCount }, (_, i) => ({
             setNumber: i + 1,
             weight: 0, // Kept for backward compatibility with saved workouts
             reps: 0, // Current reps (decrements from maxReps)
-            maxReps: 12, // Target reps for this set (default to 12)
+            maxReps: isPerSetReps ? (maxRepsConfig[i] || 12) : maxRepsConfig, // Per-set or global maxReps
             completedReps: 0, // Actual reps completed
             completed: false,
           })),
@@ -126,11 +139,35 @@ export const WorkoutProvider = ({ children }) => {
     setActiveWorkout(null);
   };
 
+  // Personalization methods
+  const getPersonalizedExercise = (templateId, exerciseId) => {
+    return storage.getExercisePersonalization(templateId, exerciseId);
+  };
+
+  const savePersonalization = (templateId, exerciseId, config) => {
+    storage.saveExercisePersonalization(templateId, exerciseId, config);
+    setTemplatePersonalizations(storage.getTemplatePersonalizations());
+  };
+
+  const resetPersonalization = (templateId, exerciseId) => {
+    storage.deleteExercisePersonalization(templateId, exerciseId);
+    setTemplatePersonalizations(storage.getTemplatePersonalizations());
+  };
+
+  const hasPersonalization = (templateId, exerciseId) => {
+    return storage.hasExercisePersonalization(templateId, exerciseId);
+  };
+
+  const getPersonalizationCount = (templateId) => {
+    return storage.getPersonalizationCount(templateId);
+  };
+
   const value = {
     exercises,
     workoutTemplates,
     completedWorkouts,
     activeWorkout,
+    templatePersonalizations,
     addExercise,
     updateExercise,
     deleteExercise: deleteExerciseById,
@@ -141,6 +178,11 @@ export const WorkoutProvider = ({ children }) => {
     updateActiveWorkout,
     completeWorkout,
     cancelWorkout,
+    getPersonalizedExercise,
+    savePersonalization,
+    resetPersonalization,
+    hasPersonalization,
+    getPersonalizationCount,
   };
 
   return (

@@ -3,16 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
-import { Check, Minus, Plus, X } from 'lucide-react';
+import { ExercisePersonalizationModal } from '../components/shared/ExercisePersonalizationModal';
+import { Check, Minus, Plus, X, Settings2 } from 'lucide-react';
 import { formatWeight } from '../utils/helpers';
 import { getServiceWorkerRegistration } from '../utils/serviceWorkerRegistration';
 
 export const ActiveWorkout = () => {
   const navigate = useNavigate();
-  const { activeWorkout, updateActiveWorkout, completeWorkout, cancelWorkout } =
-    useWorkoutContext();
+  const {
+    activeWorkout,
+    updateActiveWorkout,
+    completeWorkout,
+    cancelWorkout,
+    savePersonalization,
+    getPersonalizedExercise,
+    resetPersonalization,
+    exercises,
+  } = useWorkoutContext();
   const [currentExercises, setCurrentExercises] = useState([]);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [showSavePersonalization, setShowSavePersonalization] = useState(false);
+  const [personalizedChanges, setPersonalizedChanges] = useState([]);
+  const [personalizationModal, setPersonalizationModal] = useState({
+    isOpen: false,
+    exerciseIndex: null,
+    exercise: null,
+  });
   const [restTimer, setRestTimer] = useState(null);
   const [timerInterval, setTimerInterval] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -238,7 +254,113 @@ export const ActiveWorkout = () => {
     updateActiveWorkout({ exercises: newExercises });
   };
 
+  const handleOpenSettings = (exerciseIdx) => {
+    const exercise = currentExercises[exerciseIdx];
+    setPersonalizationModal({
+      isOpen: true,
+      exerciseIndex: exerciseIdx,
+      exercise: {
+        id: exercise.exerciseId,
+        name: exercise.exerciseName,
+        emoji: exercise.emoji,
+      },
+    });
+  };
+
+  const handleSaveExerciseSettings = (config) => {
+    if (personalizationModal.exerciseIndex === null) return;
+
+    const exerciseIdx = personalizationModal.exerciseIndex;
+    const newExercises = [...currentExercises];
+    const exercise = newExercises[exerciseIdx];
+
+    const oldSetsCount = exercise.sets.length;
+    const newSetsCount = config.sets;
+    const newMaxReps = config.maxReps; // Can be number or array
+
+    // Adjust sets array
+    if (newSetsCount > oldSetsCount) {
+      // Add new sets
+      for (let i = oldSetsCount; i < newSetsCount; i++) {
+        const maxReps = Array.isArray(newMaxReps) ? newMaxReps[i] : newMaxReps;
+        exercise.sets.push({
+          setNumber: i + 1,
+          weight: 0,
+          reps: 0,
+          maxReps: maxReps,
+          completedReps: 0,
+          completed: false,
+        });
+      }
+    } else if (newSetsCount < oldSetsCount) {
+      // Remove sets from the end
+      exercise.sets = exercise.sets.slice(0, newSetsCount);
+    }
+
+    // Update maxReps for all sets
+    exercise.sets.forEach((set, idx) => {
+      set.maxReps = Array.isArray(newMaxReps) ? newMaxReps[idx] : newMaxReps;
+      set.setNumber = idx + 1; // Ensure numbering is correct
+    });
+
+    setCurrentExercises(newExercises);
+    updateActiveWorkout({ exercises: newExercises });
+
+    // Track this change for personalization prompt
+    trackPersonalizationChange(exercise.exerciseId, config.sets, config.maxReps);
+  };
+
+  const handleResetExerciseSettings = () => {
+    if (activeWorkout.workoutTemplateId && personalizationModal.exercise) {
+      resetPersonalization(activeWorkout.workoutTemplateId, personalizationModal.exercise.id);
+    }
+  };
+
+  const handleCloseSettings = () => {
+    setPersonalizationModal({
+      isOpen: false,
+      exerciseIndex: null,
+      exercise: null,
+    });
+  };
+
+  const trackPersonalizationChange = (exerciseId, sets, maxReps) => {
+    setPersonalizedChanges((prev) => {
+      const existing = prev.find((c) => c.exerciseId === exerciseId);
+      if (existing) {
+        return prev.map((c) =>
+          c.exerciseId === exerciseId ? { ...c, sets, maxReps } : c
+        );
+      }
+      return [...prev, { exerciseId, sets, maxReps }];
+    });
+  };
+
   const handleCompleteWorkout = () => {
+    // Check if there are any personalized changes
+    if (personalizedChanges.length > 0 && activeWorkout.workoutTemplateId) {
+      setShowSavePersonalization(true);
+    } else {
+      completeWorkout();
+      navigate('/history');
+    }
+  };
+
+  const handleSaveAndComplete = () => {
+    // Save all personalizations
+    if (activeWorkout.workoutTemplateId) {
+      personalizedChanges.forEach((change) => {
+        savePersonalization(activeWorkout.workoutTemplateId, change.exerciseId, {
+          sets: change.sets,
+          maxReps: change.maxReps,
+        });
+      });
+    }
+    completeWorkout();
+    navigate('/history');
+  };
+
+  const handleCompleteWithoutSaving = () => {
     completeWorkout();
     navigate('/history');
   };
@@ -338,6 +460,14 @@ export const ActiveWorkout = () => {
                   <h2 className="text-lg font-semibold text-gray-900 flex-1">
                     {exercise.exerciseName}
                   </h2>
+                  {/* Settings Icon */}
+                  <button
+                    onClick={() => handleOpenSettings(exerciseIdx)}
+                    className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
+                    title="Customize sets and reps"
+                  >
+                    <Settings2 size={20} />
+                  </button>
                 </div>
 
                 {/* Single Weight Input for Exercise */}
@@ -437,6 +567,66 @@ export const ActiveWorkout = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Save Personalization Modal */}
+        {showSavePersonalization && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+              <div className="text-center mb-4">
+                <span className="text-4xl">⭐</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                Save Your Changes?
+              </h3>
+              <p className="text-gray-600 mb-6 text-center">
+                You modified {personalizedChanges.length} exercise{personalizedChanges.length > 1 ? 's' : ''}.
+                Save these changes for next time?
+              </p>
+              <div className="space-y-3">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={handleSaveAndComplete}
+                >
+                  Save & Finish
+                </Button>
+                <Button
+                  variant="ghost"
+                  fullWidth
+                  onClick={handleCompleteWithoutSaving}
+                >
+                  Finish Without Saving
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Exercise Personalization Modal */}
+        {personalizationModal.isOpen && personalizationModal.exercise && (
+          <ExercisePersonalizationModal
+            isOpen={personalizationModal.isOpen}
+            onClose={handleCloseSettings}
+            exercise={personalizationModal.exercise}
+            templateId={activeWorkout.workoutTemplateId || 'temp'}
+            currentConfig={
+              activeWorkout.workoutTemplateId
+                ? getPersonalizedExercise(activeWorkout.workoutTemplateId, personalizationModal.exercise.id)
+                : null
+            }
+            currentSetsInWorkout={
+              personalizationModal.exerciseIndex !== null
+                ? currentExercises[personalizationModal.exerciseIndex]?.sets
+                : null
+            }
+            defaultConfig={{
+              sets: exercises.find((e) => e.id === personalizationModal.exercise.id)?.defaultSets || 3,
+              maxReps: 12,
+            }}
+            onSave={handleSaveExerciseSettings}
+            onReset={handleResetExerciseSettings}
+          />
         )}
       </div>
     </Layout>

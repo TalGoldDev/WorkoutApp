@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   WORKOUT_TEMPLATES: 'workout_tracker_templates',
   COMPLETED_WORKOUTS: 'workout_tracker_completed',
   PREFERENCES: 'workout_tracker_preferences',
+  TEMPLATE_PERSONALIZATIONS: 'workout_tracker_template_personalizations',
 };
 
 // Data version - increment this when seed data changes
@@ -180,6 +181,105 @@ const setDataVersion = (version) => {
   const prefs = getPreferences();
   prefs.dataVersion = version;
   savePreferences(prefs);
+};
+
+// ============= TEMPLATE PERSONALIZATIONS =============
+
+/**
+ * Get all template personalizations
+ * Structure: { [templateId]: { [exerciseId]: { sets, maxReps, lastModified } } }
+ */
+export const getTemplatePersonalizations = () => {
+  return getData(STORAGE_KEYS.TEMPLATE_PERSONALIZATIONS) || {};
+};
+
+/**
+ * Save all template personalizations
+ */
+export const saveTemplatePersonalizations = (personalizations) => {
+  return setData(STORAGE_KEYS.TEMPLATE_PERSONALIZATIONS, personalizations);
+};
+
+/**
+ * Get personalizations for a specific template
+ */
+export const getTemplatePersonalizationsById = (templateId) => {
+  const allPersonalizations = getTemplatePersonalizations();
+  return allPersonalizations[templateId] || {};
+};
+
+/**
+ * Get personalization for a specific exercise in a template
+ */
+export const getExercisePersonalization = (templateId, exerciseId) => {
+  const templatePersonalizations = getTemplatePersonalizationsById(templateId);
+  return templatePersonalizations[exerciseId] || null;
+};
+
+/**
+ * Save personalization for an exercise in a template
+ */
+export const saveExercisePersonalization = (templateId, exerciseId, config) => {
+  const allPersonalizations = getTemplatePersonalizations();
+
+  // Initialize template personalizations if not exists
+  if (!allPersonalizations[templateId]) {
+    allPersonalizations[templateId] = {};
+  }
+
+  // Save the personalization with timestamp
+  allPersonalizations[templateId][exerciseId] = {
+    sets: config.sets,
+    maxReps: config.maxReps,
+    lastModified: new Date().toISOString(),
+  };
+
+  return saveTemplatePersonalizations(allPersonalizations);
+};
+
+/**
+ * Delete personalization for a specific exercise in a template
+ */
+export const deleteExercisePersonalization = (templateId, exerciseId) => {
+  const allPersonalizations = getTemplatePersonalizations();
+
+  if (allPersonalizations[templateId]) {
+    delete allPersonalizations[templateId][exerciseId];
+
+    // Clean up empty template objects
+    if (Object.keys(allPersonalizations[templateId]).length === 0) {
+      delete allPersonalizations[templateId];
+    }
+
+    return saveTemplatePersonalizations(allPersonalizations);
+  }
+
+  return false;
+};
+
+/**
+ * Delete all personalizations for a template
+ */
+export const deleteTemplatePersonalizations = (templateId) => {
+  const allPersonalizations = getTemplatePersonalizations();
+  delete allPersonalizations[templateId];
+  return saveTemplatePersonalizations(allPersonalizations);
+};
+
+/**
+ * Check if an exercise has personalization in a template
+ */
+export const hasExercisePersonalization = (templateId, exerciseId) => {
+  const personalization = getExercisePersonalization(templateId, exerciseId);
+  return personalization !== null;
+};
+
+/**
+ * Get personalization count for a template
+ */
+export const getPersonalizationCount = (templateId) => {
+  const templatePersonalizations = getTemplatePersonalizationsById(templateId);
+  return Object.keys(templatePersonalizations).length;
 };
 
 // ============= SEED DATA =============
