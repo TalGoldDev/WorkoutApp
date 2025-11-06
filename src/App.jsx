@@ -7,6 +7,7 @@ import { ActiveWorkout } from './pages/ActiveWorkout';
 import { History } from './pages/History';
 import { Statistics } from './pages/Statistics';
 import { Admin } from './pages/Admin';
+import { CustomExercises } from './pages/CustomExercises';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/history" element={<History />} />
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/custom-exercises" element={<CustomExercises />} />
           </Routes>
         </WorkoutProvider>
       </ThemeProvider>
