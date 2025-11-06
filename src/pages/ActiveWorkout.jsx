@@ -443,9 +443,9 @@ export const ActiveWorkout = () => {
 
   return (
     <Layout showNav={false}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-primary text-white p-6 sticky top-0 z-10 shadow-md">
+        <div className="bg-primary dark:bg-blue-600 text-white p-6 sticky top-0 z-10 shadow-md">
           <div className="flex justify-between items-center mb-2">
             <div className="flex-1">
               <h1 className="text-xl font-bold">{activeWorkout.workoutName}</h1>
@@ -518,21 +518,21 @@ export const ActiveWorkout = () => {
             return (
             <div key={exerciseIdx} className={`rounded-lg shadow-sm border-2 p-4 transition-all ${
               allSetsStarted
-                ? 'bg-green-50 border-success'
-                : 'bg-white border-gray-200'
+                ? 'bg-green-50 dark:bg-green-900/20 border-success dark:border-green-600'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
             }`}>
               {/* Exercise Header with Weight */}
               <div className="mb-4">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-3xl">{exercise.emoji}</span>
-                  <h2 className="text-lg font-semibold text-gray-900 flex-1">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">
                     {exercise.exerciseName}
                   </h2>
                   <div className="flex items-center gap-1">
                     {/* Switch Exercise Button */}
                     <button
                       onClick={() => handleOpenSwitcher(exerciseIdx)}
-                      className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
+                      className="touch-target p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-blue-400"
                       title="Switch exercise"
                     >
                       <RefreshCw size={20} />
@@ -540,7 +540,7 @@ export const ActiveWorkout = () => {
                     {/* Settings Icon */}
                     <button
                       onClick={() => handleOpenSettings(exerciseIdx)}
-                      className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
+                      className="touch-target p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-blue-400"
                       title="Customize sets and reps"
                     >
                       <Settings2 size={20} />
@@ -552,7 +552,7 @@ export const ActiveWorkout = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleIncrementExerciseWeight(exerciseIdx, -2.5)}
-                    className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
+                    className="touch-target bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg p-2 text-gray-900 dark:text-white"
                   >
                     <Minus size={18} />
                   </button>
@@ -564,12 +564,12 @@ export const ActiveWorkout = () => {
                       handleExerciseWeightChange(exerciseIdx, e.target.value)
                     }
                     placeholder="0"
-                    className="w-24 px-3 py-2 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-24 px-3 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
-                  <span className="text-sm text-gray-600">kg</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">kg</span>
                   <button
                     onClick={() => handleIncrementExerciseWeight(exerciseIdx, 2.5)}
-                    className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
+                    className="touch-target bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg p-2 text-gray-900 dark:text-white"
                   >
                     <Plus size={18} />
                   </button>
@@ -588,8 +588,8 @@ export const ActiveWorkout = () => {
                       onClick={() => handleSetClick(exerciseIdx, setIdx)}
                       className={`touch-target p-4 rounded-lg font-semibold transition-all ${
                         isCompleted
-                          ? 'bg-success text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          ? 'bg-success dark:bg-green-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >
                       {isNotStarted && `Set ${set.setNumber}`}
@@ -604,7 +604,7 @@ export const ActiveWorkout = () => {
         </div>
 
         {/* Complete Workout Button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg">
           <div className="max-w-lg mx-auto">
             <Button
               variant="success"
@@ -619,12 +619,12 @@ export const ActiveWorkout = () => {
 
         {/* Cancel Confirmation Modal */}
         {showConfirmCancel && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {editMode ? 'Cancel Edit?' : 'Cancel Workout?'}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {editMode
                   ? 'Your changes will not be saved. Are you sure you want to cancel?'
                   : 'Your progress will not be saved. Are you sure you want to cancel?'}
@@ -651,15 +651,15 @@ export const ActiveWorkout = () => {
 
         {/* Save Personalization Modal */}
         {showSavePersonalization && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
               <div className="text-center mb-4">
                 <span className="text-4xl">⭐</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center">
                 Save Your Changes?
               </h3>
-              <p className="text-gray-600 mb-6 text-center">
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
                 You modified {personalizedChanges.length} exercise{personalizedChanges.length > 1 ? 's' : ''}.
                 Save these changes for next time?
               </p>

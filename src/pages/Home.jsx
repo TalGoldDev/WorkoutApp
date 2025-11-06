@@ -21,9 +21,9 @@ export const Home = () => {
       <div className="p-6">
         {/* Header */}
         <div className="mb-8 text-center">
-          <Dumbbell size={48} className="mx-auto mb-4 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900">Workout Tracker</h1>
-          <p className="text-gray-600 mt-2">Track your progress, achieve your goals</p>
+          <Dumbbell size={48} className="mx-auto mb-4 text-primary dark:text-blue-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Workout Tracker</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Track your progress, achieve your goals</p>
         </div>
 
         {/* Quick Start */}
@@ -43,7 +43,7 @@ export const Home = () => {
         {/* Pre-built Programs */}
         {prebuiltTemplates.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Pre-built Programs
             </h2>
             <div className="space-y-3">
@@ -53,20 +53,20 @@ export const Home = () => {
                 return (
                   <div
                     key={template.id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
                         {template.name}
                       </h3>
                       {personalizationCount > 0 && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1">
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full flex items-center gap-1">
                           <span>⭐</span>
                           <span>{personalizationCount}</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                       {template.exercises.length} exercises
                     </p>
                     <Button
@@ -87,7 +87,7 @@ export const Home = () => {
         {/* Custom Workouts */}
         {customTemplates.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               My Workouts
             </h2>
             <div className="space-y-3">
@@ -97,20 +97,20 @@ export const Home = () => {
                 return (
                   <div
                     key={template.id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
                         {template.name}
                       </h3>
                       {personalizationCount > 0 && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1">
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full flex items-center gap-1">
                           <span>⭐</span>
                           <span>{personalizationCount}</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                       {template.exercises.length} exercises
                     </p>
                     <Button
