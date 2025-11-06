@@ -1,10 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getWeeklySetsOverview } from '../../services/localStorageService';
 
 export const SetsOverview = ({ exerciseId }) => {
   const [weekOffset, setWeekOffset] = useState(0);
+
+  // Reset weekOffset when exercise changes
+  useEffect(() => {
+    setWeekOffset(0);
+  }, [exerciseId]);
 
   // Get week data
   const weekData = useMemo(() => {
@@ -34,7 +39,15 @@ export const SetsOverview = ({ exerciseId }) => {
     return weekData && weekData.weekStart < currentWeekStart;
   }, [weekData]);
 
-  if (!weekData || weekData.sets.length === 0) {
+  // Don't show if there's never been any data for this exercise
+  if (!weekData) {
+    return null;
+  }
+
+  // Check if there's any data at all for this exercise (across all weeks)
+  const hasAnyData = canNavigatePrevious || weekData.sets.length > 0 || canNavigateNext;
+
+  if (!hasAnyData) {
     return null;
   }
 
@@ -82,32 +95,40 @@ export const SetsOverview = ({ exerciseId }) => {
         </button>
       </div>
 
-      {/* Sets Grid */}
-      <div className="flex flex-wrap gap-3 justify-center">
-        {weekData.sets.map((set, index) => (
-          <div
-            key={index}
-            className="flex flex-col items-center gap-1"
-          >
-            {/* Set Number Badge */}
-            <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-blue-400/10 flex items-center justify-center border-2 border-primary dark:border-blue-400">
-              <span className="text-lg font-bold text-primary dark:text-blue-400">
-                {set.setNumber}
-              </span>
-            </div>
+      {/* Sets Grid or Empty State */}
+      {weekData.sets.length > 0 ? (
+        <div className="flex flex-wrap gap-3 justify-center">
+          {weekData.sets.map((set, index) => (
+            <div
+              key={index}
+              className="flex flex-col items-center gap-1"
+            >
+              {/* Set Number Badge */}
+              <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-blue-400/10 flex items-center justify-center border-2 border-primary dark:border-blue-400">
+                <span className="text-lg font-bold text-primary dark:text-blue-400">
+                  {set.setNumber}
+                </span>
+              </div>
 
-            {/* Reps Count */}
-            <div className="text-center">
-              <div className="text-xl font-semibold text-gray-900 dark:text-white">
-                {set.reps}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                reps
+              {/* Reps Count */}
+              <div className="text-center">
+                <div className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {set.reps}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  reps
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            No sets completed this week
+          </p>
+        </div>
+      )}
     </div>
   );
 };
