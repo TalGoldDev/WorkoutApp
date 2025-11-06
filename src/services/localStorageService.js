@@ -434,8 +434,10 @@ export const processWorkoutIndicationDismissals = (completedWorkout) => {
   completedWorkout.exercises.forEach((exercise) => {
     const exerciseId = exercise.exerciseId;
 
-    // Get the weight used in this workout (from first set that has weight)
-    const currentWeight = exercise.sets.find((set) => set.weight > 0)?.weight || 0;
+    // Get the weight used in this workout (prioritize workingWeight)
+    const currentWeight = exercise.workingWeight ||
+                          exercise.sets.find((set) => set.weight > 0)?.weight ||
+                          0;
 
     // Find the previous workout with this exercise
     const previousWorkout = workouts.find(
@@ -449,7 +451,10 @@ export const processWorkoutIndicationDismissals = (completedWorkout) => {
       const previousExercise = previousWorkout.exercises.find(
         (ex) => ex.exerciseId === exerciseId
       );
-      previousWeight = previousExercise?.sets.find((set) => set.weight > 0)?.weight || 0;
+      // Prioritize workingWeight for previous workout too
+      previousWeight = previousExercise?.workingWeight ||
+                      previousExercise?.sets.find((set) => set.weight > 0)?.weight ||
+                      0;
     }
 
     // Always dismiss reduce indication on workout completion (per requirements)
@@ -599,6 +604,7 @@ export const getWeightRecommendation = (exerciseId) => {
 /**
  * Get the last used weight for an exercise
  * Returns the weight from the most recent workout, or 0 if no history exists
+ * Prioritizes workingWeight over set weights for better persistence
  */
 export const getLastUsedWeight = (exerciseId) => {
   const workouts = getCompletedWorkouts();
@@ -607,11 +613,19 @@ export const getLastUsedWeight = (exerciseId) => {
   for (const workout of workouts) {
     const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
 
-    if (exercise && exercise.sets && exercise.sets.length > 0) {
-      // Get the weight from the first set (or could use max weight)
-      // Using first set as it represents the working weight for that session
-      const weight = exercise.sets[0].weight || 0;
-      return weight;
+    if (exercise) {
+      // Priority 1: Use workingWeight if available (this is the user's set weight)
+      if (exercise.workingWeight && exercise.workingWeight > 0) {
+        return exercise.workingWeight;
+      }
+
+      // Priority 2: Find any set with a weight > 0
+      if (exercise.sets && exercise.sets.length > 0) {
+        const setWithWeight = exercise.sets.find((set) => set.weight > 0);
+        if (setWithWeight) {
+          return setWithWeight.weight;
+        }
+      }
     }
   }
 
