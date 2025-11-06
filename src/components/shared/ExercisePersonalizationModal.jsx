@@ -128,20 +128,20 @@ export const ExercisePersonalizationModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" onClick={onClose}>
-      <div className="bg-white rounded-xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 dark:bg-opacity-80" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <span className="text-3xl">{exercise.emoji}</span>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Customize Exercise</h2>
-              <p className="text-sm text-gray-600">{exercise.name}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customize Exercise</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{exercise.name}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="touch-target text-gray-400 hover:text-gray-600"
+            className="touch-target text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X size={24} />
           </button>
@@ -151,7 +151,7 @@ export const ExercisePersonalizationModal = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Personalization Status */}
           {isPersonalized && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-center gap-2">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg text-sm text-blue-700 dark:text-blue-400 flex items-center gap-2">
               <span className="text-lg">⭐</span>
               <span>This exercise has personalized settings</span>
             </div>
@@ -159,32 +159,32 @@ export const ExercisePersonalizationModal = ({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-sm text-red-700 dark:text-red-400">
               {error}
             </div>
           )}
 
           {/* Sets Control */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Number of Sets
             </label>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleSetsChange(sets - 1)}
                 disabled={sets <= 1}
-                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-white text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-blue-500 hover:bg-white dark:hover:bg-gray-800 text-xl font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 -
               </button>
               <div className="flex-1 text-center">
-                <div className="text-3xl font-bold text-gray-900">{sets}</div>
-                <div className="text-xs text-gray-500 mt-1">Default: {defaultConfig.sets}</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{sets}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Default: {defaultConfig.sets}</div>
               </div>
               <button
                 onClick={() => handleSetsChange(sets + 1)}
                 disabled={sets >= 10}
-                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-white text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-blue-500 hover:bg-white dark:hover:bg-gray-800 text-xl font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 +
               </button>
@@ -192,8 +192,8 @@ export const ExercisePersonalizationModal = ({
           </div>
 
           {/* Default Reps Quick Set */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Quick Set All Reps
             </label>
             <div className="flex items-center gap-3">
@@ -206,38 +206,38 @@ export const ExercisePersonalizationModal = ({
                   const value = parseInt(e.target.value) || 1;
                   setDefaultReps(value);
                 }}
-                className="flex-1 text-center text-xl font-bold px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="flex-1 text-center text-xl font-bold px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
               <button
                 onClick={handleSetAllReps}
-                className="touch-target px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark font-medium flex items-center gap-2"
+                className="touch-target px-4 py-3 bg-primary dark:bg-blue-600 text-white rounded-lg hover:bg-primary-dark dark:hover:bg-blue-700 font-medium flex items-center gap-2"
                 title="Apply to all sets"
               >
                 <Copy size={18} />
                 Apply to All
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Set a value and click "Apply to All" to use the same reps for all sets
             </p>
           </div>
 
           {/* Per-Set Reps */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Reps Per Set
             </label>
             <div className="space-y-2">
               {perSetReps.map((reps, index) => (
-                <div key={index} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-3">
-                  <span className="text-sm font-medium text-gray-600 w-16">
+                <div key={index} className="flex items-center gap-3 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 w-16">
                     Set {index + 1}
                   </span>
                   <div className="flex items-center gap-2 flex-1">
                     <button
                       onClick={() => handleSetRepsChange(index, reps - 1)}
                       disabled={reps <= 1}
-                      className="w-8 h-8 rounded border border-gray-300 hover:bg-gray-50 text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-lg font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       -
                     </button>
@@ -247,16 +247,16 @@ export const ExercisePersonalizationModal = ({
                       max="50"
                       value={reps}
                       onChange={(e) => handleSetRepsChange(index, e.target.value)}
-                      className="w-20 text-center font-bold px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-20 text-center font-bold px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                     <button
                       onClick={() => handleSetRepsChange(index, reps + 1)}
                       disabled={reps >= 50}
-                      className="w-8 h-8 rounded border border-gray-300 hover:bg-gray-50 text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-lg font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       +
                     </button>
-                    <span className="text-sm text-gray-500">reps</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">reps</span>
                   </div>
                 </div>
               ))}
@@ -264,30 +264,30 @@ export const ExercisePersonalizationModal = ({
           </div>
 
           {/* Rest Time Control */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Rest Time Between Sets
             </label>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setRestTime(Math.max(10, restTime - 15))}
                 disabled={restTime <= 10}
-                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-white text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-blue-500 hover:bg-white dark:hover:bg-gray-800 text-xl font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 -
               </button>
               <div className="flex-1 text-center">
-                <div className="text-3xl font-bold text-gray-900">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {Math.floor(restTime / 60)}:{(restTime % 60).toString().padStart(2, '0')}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {restTime} seconds (Default: {defaultConfig.restTime || 90}s)
                 </div>
               </div>
               <button
                 onClick={() => setRestTime(Math.min(600, restTime + 15))}
                 disabled={restTime >= 600}
-                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-white text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-blue-500 hover:bg-white dark:hover:bg-gray-800 text-xl font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 +
               </button>
@@ -295,25 +295,25 @@ export const ExercisePersonalizationModal = ({
             <div className="mt-3 flex gap-2 flex-wrap">
               <button
                 onClick={() => setRestTime(60)}
-                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+                className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
               >
                 1:00
               </button>
               <button
                 onClick={() => setRestTime(90)}
-                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+                className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
               >
                 1:30
               </button>
               <button
                 onClick={() => setRestTime(120)}
-                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+                className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
               >
                 2:00
               </button>
               <button
                 onClick={() => setRestTime(180)}
-                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+                className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
               >
                 3:00
               </button>
@@ -322,7 +322,7 @@ export const ExercisePersonalizationModal = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 space-y-3 bg-gray-50">
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3 bg-gray-50 dark:bg-gray-800">
           {isPersonalized && (
             <Button
               variant="secondary"
