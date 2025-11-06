@@ -1,7 +1,7 @@
 {
-  "name": "Workout Tracker",
-  "short_name": "Workout",
-  "description": "Track your workouts, monitor progress, and stay motivated",
+  "name": "GymLog - Smart Workout Tracker",
+  "short_name": "GymLog",
+  "description": "Track your workouts, monitor your progress, and achieve your fitness goals with smart weight progression",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f9fafb",
