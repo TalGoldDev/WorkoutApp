@@ -187,7 +187,7 @@ const setDataVersion = (version) => {
 
 /**
  * Get all template personalizations
- * Structure: { [templateId]: { [exerciseId]: { sets, maxReps, lastModified } } }
+ * Structure: { [templateId]: { [exerciseId]: { sets, maxReps, restTime, lastModified } } }
  */
 export const getTemplatePersonalizations = () => {
   return getData(STORAGE_KEYS.TEMPLATE_PERSONALIZATIONS) || {};
@@ -231,6 +231,7 @@ export const saveExercisePersonalization = (templateId, exerciseId, config) => {
   allPersonalizations[templateId][exerciseId] = {
     sets: config.sets,
     maxReps: config.maxReps,
+    restTime: config.restTime || 90,
     lastModified: new Date().toISOString(),
   };
 

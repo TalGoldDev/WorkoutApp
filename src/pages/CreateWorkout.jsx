@@ -328,6 +328,7 @@ export const CreateWorkout = () => {
           defaultConfig={{
             sets: exercises.find((e) => e.id === personalizationModal.exercise.id)?.defaultSets || 3,
             maxReps: 12,
+            restTime: 90,
           }}
           onSave={handleSavePersonalization}
           onReset={handleResetPersonalization}
