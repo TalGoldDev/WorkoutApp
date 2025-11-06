@@ -50,7 +50,7 @@ export const ExercisePersonalizationModal = ({
     initialReps = initialReps.slice(0, configSets);
 
     setPerSetReps(initialReps);
-  }, [currentConfig, defaultConfig, sets, currentSetsInWorkout]);
+  }, [currentConfig, defaultConfig, currentSetsInWorkout]);
 
   if (!isOpen) return null;
 
