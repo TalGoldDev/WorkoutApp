@@ -97,11 +97,14 @@ export const WorkoutProvider = ({ children }) => {
         // maxReps can be a number (applies to all sets) or an array (per-set values)
         const isPerSetReps = Array.isArray(maxRepsConfig);
 
+        // Get last used weight for this exercise (sticky weights)
+        const lastUsedWeight = storage.getLastUsedWeight(ex.exerciseId);
+
         return {
           exerciseId: ex.exerciseId,
           exerciseName: exercise?.name || 'Unknown',
           emoji: exercise?.emoji || '',
-          workingWeight: 0, // Single weight for the entire exercise
+          workingWeight: lastUsedWeight, // Pre-fill with last used weight
           restTime: restTime, // Rest time between sets for this exercise
           sets: Array.from({ length: setsCount }, (_, i) => ({
             setNumber: i + 1,

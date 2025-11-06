@@ -432,6 +432,28 @@ export const getWeightRecommendation = (exerciseId) => {
   return null;
 };
 
+/**
+ * Get the last used weight for an exercise
+ * Returns the weight from the most recent workout, or 0 if no history exists
+ */
+export const getLastUsedWeight = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Find the most recent workout that contains this exercise
+  for (const workout of workouts) {
+    const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
+
+    if (exercise && exercise.sets && exercise.sets.length > 0) {
+      // Get the weight from the first set (or could use max weight)
+      // Using first set as it represents the working weight for that session
+      const weight = exercise.sets[0].weight || 0;
+      return weight;
+    }
+  }
+
+  return 0; // No history found
+};
+
 // ============= SEED DATA =============
 
 /**
