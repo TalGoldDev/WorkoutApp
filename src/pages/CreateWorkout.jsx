@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
@@ -8,9 +8,11 @@ import { ArrowLeft, Plus, X, GripVertical, Settings2 } from 'lucide-react';
 
 export const CreateWorkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     exercises,
     addTemplate,
+    updateTemplate,
     startWorkout,
     savePersonalization,
     getPersonalizedExercise,
@@ -20,11 +22,37 @@ export const CreateWorkout = () => {
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [showExerciseList, setShowExerciseList] = useState(false);
   const [error, setError] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [personalizationModal, setPersonalizationModal] = useState({
     isOpen: false,
     exercise: null,
     templateId: null,
   });
+
+  // Load template data if editing
+  useEffect(() => {
+    if (location.state?.editTemplate) {
+      const template = location.state.editTemplate;
+      setEditMode(true);
+      setEditingTemplateId(template.id);
+      setWorkoutName(template.name);
+
+      // Build the selected exercises array from template
+      const exercisesWithDetails = template.exercises.map((ex) => {
+        const exerciseDetails = exercises.find((e) => e.id === ex.exerciseId);
+        return {
+          exerciseId: ex.exerciseId,
+          exerciseName: exerciseDetails?.name || 'Unknown Exercise',
+          emoji: exerciseDetails?.emoji || '💪',
+          sets: ex.sets,
+          order: ex.order,
+        };
+      });
+
+      setSelectedExercises(exercisesWithDetails.sort((a, b) => a.order - b.order));
+    }
+  }, [location.state, exercises]);
 
   const handleAddExercise = (exercise) => {
     if (selectedExercises.find((e) => e.exerciseId === exercise.id)) {
@@ -108,7 +136,7 @@ export const CreateWorkout = () => {
       return;
     }
 
-    const template = {
+    const templateData = {
       name: workoutName,
       exercises: selectedExercises.map((ex, idx) => ({
         exerciseId: ex.exerciseId,
@@ -117,7 +145,13 @@ export const CreateWorkout = () => {
       })),
     };
 
-    addTemplate(template);
+    if (editMode && editingTemplateId) {
+      // Update existing template
+      updateTemplate(editingTemplateId, templateData);
+    } else {
+      // Create new template
+      addTemplate(templateData);
+    }
     navigate('/');
   };
 
@@ -129,7 +163,7 @@ export const CreateWorkout = () => {
         name: exercise.exerciseName,
         emoji: exercise.emoji,
       },
-      templateId: templateId || 'temp', // Use 'temp' for unsaved templates
+      templateId: editMode && editingTemplateId ? editingTemplateId : (templateId || 'temp'), // Use actual template ID when editing
     });
   };
 
@@ -185,7 +219,9 @@ export const CreateWorkout = () => {
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Workout</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {editMode ? 'Edit Workout' : 'Create Workout'}
+          </h1>
         </div>
 
         {/* Error Message */}
@@ -222,7 +258,8 @@ export const CreateWorkout = () => {
           ) : (
             <div className="space-y-2">
               {selectedExercises.map((exercise) => {
-                const personalization = getPersonalizedExercise('temp', exercise.exerciseId);
+                const templateIdForPersonalization = editMode && editingTemplateId ? editingTemplateId : 'temp';
+                const personalization = getPersonalizedExercise(templateIdForPersonalization, exercise.exerciseId);
                 const isPersonalized = personalization !== null;
 
                 return (
@@ -255,7 +292,7 @@ export const CreateWorkout = () => {
                         ))}
                       </select>
                       <button
-                        onClick={() => handleOpenPersonalization(exercise, 'temp')}
+                        onClick={() => handleOpenPersonalization(exercise, templateIdForPersonalization)}
                         className="touch-target text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary"
                         title="Customize exercise"
                       >
@@ -324,16 +361,18 @@ export const CreateWorkout = () => {
             fullWidth
             onClick={handleSaveWorkout}
           >
-            Save Workout
+            {editMode ? 'Update Workout' : 'Save Workout'}
           </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            fullWidth
-            onClick={handleStartWorkout}
-          >
-            Save & Start Workout
-          </Button>
+          {!editMode && (
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
+              onClick={handleStartWorkout}
+            >
+              Save & Start Workout
+            </Button>
+          )}
         </div>
       </div>
 
