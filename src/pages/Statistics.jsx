@@ -5,6 +5,7 @@ import { getExerciseHistory, getWeeklyRepsSum } from '../services/localStorageSe
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { TrendingUp, Target, Calendar, ArrowUp, Hash } from 'lucide-react';
+import { SetsOverview } from '../components/statistics/SetsOverview';
 
 export const Statistics = () => {
   const { exercises, completedWorkouts } = useWorkoutContext();
@@ -222,6 +223,11 @@ export const Statistics = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* Sets Overview */}
+            <div className="mt-6">
+              <SetsOverview exerciseId={selectedExerciseId} />
             </div>
           </>
         )}

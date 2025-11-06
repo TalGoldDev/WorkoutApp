@@ -719,6 +719,109 @@ export const getWeeklyRepsSum = (exerciseId) => {
   return totalReps;
 };
 
+/**
+ * Get sets overview for a specific week
+ * @param {string} exerciseId - Exercise ID
+ * @param {number} weekOffset - Week offset (0=current, -1=previous, +1=next)
+ * @returns {Object} Week data with sets array
+ */
+export const getWeeklySetsOverview = (exerciseId, weekOffset = 0) => {
+  const workouts = getCompletedWorkouts();
+
+  // Calculate week boundaries
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - daysFromMonday + (weekOffset * 7));
+  weekStart.setHours(0, 0, 0, 0);
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  // Filter and collect sets
+  const sets = [];
+  let setCounter = 0;
+
+  // Get workouts in date range, sorted chronologically
+  const weekWorkouts = workouts
+    .filter(w => {
+      const workoutDate = new Date(w.completedAt);
+      return workoutDate >= weekStart && workoutDate <= weekEnd;
+    })
+    .sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt));
+
+  // Extract sets
+  weekWorkouts.forEach(workout => {
+    const exercise = workout.exercises.find(ex => ex.exerciseId === exerciseId);
+
+    if (exercise && exercise.sets) {
+      exercise.sets.forEach(set => {
+        if (set.completed && set.completedReps !== undefined) {
+          setCounter++;
+          sets.push({
+            setNumber: setCounter,
+            reps: set.completedReps,
+            workoutDate: workout.completedAt,
+            workoutName: workout.workoutName,
+          });
+        }
+      });
+    }
+  });
+
+  return {
+    weekStart,
+    weekEnd,
+    sets,
+  };
+};
+
+/**
+ * Get the week range for an exercise (earliest and latest weeks with data)
+ * @param {string} exerciseId - Exercise ID
+ * @returns {Object} { earliestWeekOffset, latestWeekOffset, hasData } relative to current week
+ */
+export const getExerciseWeekRange = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Filter workouts that contain this exercise
+  const workoutsWithExercise = workouts.filter(workout => {
+    return workout.exercises.some(ex => ex.exerciseId === exerciseId && ex.sets && ex.sets.some(s => s.completed));
+  });
+
+  if (workoutsWithExercise.length === 0) {
+    return { earliestWeekOffset: 0, latestWeekOffset: 0, hasData: false };
+  }
+
+  // Calculate current week start
+  const now = new Date();
+  const currentDay = now.getDay();
+  const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setDate(now.getDate() - daysFromMonday);
+  currentWeekStart.setHours(0, 0, 0, 0);
+
+  let earliestWeekOffset = 0;
+  let latestWeekOffset = 0;
+
+  workoutsWithExercise.forEach(workout => {
+    const workoutDate = new Date(workout.completedAt);
+
+    // Calculate which week this workout falls into
+    const daysDiff = Math.floor((currentWeekStart - workoutDate) / (1000 * 60 * 60 * 24));
+    const weekOffset = -Math.floor(daysDiff / 7);
+
+    earliestWeekOffset = Math.min(earliestWeekOffset, weekOffset);
+    latestWeekOffset = Math.max(latestWeekOffset, weekOffset);
+  });
+
+  return { earliestWeekOffset, latestWeekOffset, hasData: true };
+};
+
 // ============= SEED DATA =============
 
 /**

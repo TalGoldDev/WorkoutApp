@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
+import { getExercises, getWorkoutTemplates, addCompletedWorkout } from '../services/localStorageService';
 
 export const Admin = () => {
   const [notificationPermission, setNotificationPermission] = useState('default');
@@ -247,6 +248,114 @@ export const Admin = () => {
     }
   };
 
+  const fill30DaysWorkoutHistory = () => {
+    if (!window.confirm('This will add 30 days of workout history. Continue?')) {
+      return;
+    }
+
+    try {
+      addLog('Starting to fill 30 days of workout history...', 'info');
+
+      const exercises = getExercises();
+      const templates = getWorkoutTemplates();
+
+      if (exercises.length === 0) {
+        addLog('No exercises found. Please seed data first.', 'error');
+        return;
+      }
+
+      // Use a template if available, otherwise create generic workouts
+      const templateToUse = templates.length > 0 ? templates[0] : null;
+      let workoutsAdded = 0;
+
+      // Create workouts for the past 30 days
+      for (let daysAgo = 29; daysAgo >= 0; daysAgo--) {
+        const workoutDate = new Date();
+        workoutDate.setDate(workoutDate.getDate() - daysAgo);
+
+        // Set random time between 8 AM and 8 PM
+        const randomHour = Math.floor(Math.random() * 12) + 8;
+        const randomMinute = Math.floor(Math.random() * 60);
+        workoutDate.setHours(randomHour, randomMinute, 0, 0);
+
+        // Select 4-6 random exercises
+        const numExercises = Math.floor(Math.random() * 3) + 4; // 4-6 exercises
+        const selectedExercises = [];
+        const availableExercises = [...exercises];
+
+        for (let i = 0; i < numExercises && availableExercises.length > 0; i++) {
+          const randomIndex = Math.floor(Math.random() * availableExercises.length);
+          const exercise = availableExercises.splice(randomIndex, 1)[0];
+
+          // Generate 3-5 sets for this exercise
+          const numSets = Math.floor(Math.random() * 3) + 3; // 3-5 sets
+          const sets = [];
+
+          // Random weight between 20-100 kg, increasing slightly over time
+          const baseWeight = 20 + Math.floor(Math.random() * 60) + Math.floor((29 - daysAgo) / 5);
+
+          for (let setNum = 1; setNum <= numSets; setNum++) {
+            const maxReps = Math.floor(Math.random() * 4) + 8; // 8-11 reps
+            const completedReps = Math.max(
+              maxReps - Math.floor(Math.random() * 3), // Sometimes fail 1-2 reps
+              Math.floor(maxReps * 0.7) // At least 70% of max reps
+            );
+
+            sets.push({
+              setNumber: setNum,
+              weight: baseWeight,
+              reps: maxReps,
+              maxReps: maxReps,
+              completedReps: completedReps,
+              completed: true,
+            });
+          }
+
+          selectedExercises.push({
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            emoji: exercise.emoji,
+            workingWeight: baseWeight,
+            restTime: 90,
+            sets: sets,
+          });
+        }
+
+        // Calculate workout duration (10-20 minutes per exercise)
+        const duration = numExercises * (10 + Math.floor(Math.random() * 10));
+
+        const startTime = new Date(workoutDate);
+        const endTime = new Date(workoutDate);
+        endTime.setMinutes(endTime.getMinutes() + duration);
+
+        // Create completed workout
+        const completedWorkout = {
+          id: crypto.randomUUID(),
+          workoutTemplateId: templateToUse?.id || null,
+          workoutName: templateToUse?.name || 'Generated Workout',
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          completedAt: workoutDate.toISOString(),
+          duration: duration,
+          exercises: selectedExercises,
+        };
+
+        addCompletedWorkout(completedWorkout);
+        workoutsAdded++;
+      }
+
+      addLog(`Successfully added ${workoutsAdded} workouts!`, 'success');
+      addLog('Reloading page to refresh data...', 'info');
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
+    } catch (error) {
+      addLog(`Error filling workout history: ${error.message}`, 'error');
+    }
+  };
+
   return (
     <Layout>
       <div className="min-h-screen bg-background dark:bg-gray-900 p-4 pb-20">
@@ -380,6 +489,25 @@ export const Admin = () => {
               >
                 Clear All App Data
               </Button>
+            </div>
+          </div>
+
+          {/* Cheat / Testing Tools */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Cheat / Testing Tools</h2>
+            <div className="space-y-3">
+              <Button
+                variant="primary"
+                fullWidth
+                onClick={fill30DaysWorkoutHistory}
+              >
+                🎲 Fill 30 Days of Workout History
+              </Button>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  ⚡ Creates 30 days of realistic workout data with random exercises, sets, and progressive weights.
+                </p>
+              </div>
             </div>
           </div>
 
