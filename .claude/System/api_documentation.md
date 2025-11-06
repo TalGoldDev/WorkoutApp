@@ -1,6 +1,6 @@
 # API Documentation
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-11-06
 
 ---
 
@@ -28,7 +28,8 @@ const STORAGE_KEYS = {
   EXERCISES: 'workout_tracker_exercises',
   TEMPLATES: 'workout_tracker_templates',
   COMPLETED: 'workout_tracker_completed',
-  PREFERENCES: 'workout_tracker_preferences'
+  PREFERENCES: 'workout_tracker_preferences',
+  TEMPLATE_PERSONALIZATIONS: 'workout_tracker_template_personalizations'
 };
 ```
 
@@ -280,6 +281,93 @@ const history = localStorageService.getExerciseHistory("ex_001");
 
 ---
 
+#### `updateCompletedWorkout(workoutId, updatedWorkout)` (NEW)
+
+**Description:** Update an existing completed workout
+
+**Parameters:**
+- `workoutId` (string): UUID of workout to update
+- `updatedWorkout` (CompletedWorkout): Updated workout object
+
+**Returns:** `boolean` (true if successful)
+
+**Use Case:** Edit workouts within 48-hour window
+
+**Example:**
+```javascript
+const success = localStorageService.updateCompletedWorkout(
+  "completed_001",
+  {
+    ...existingWorkout,
+    exercises: updatedExercises,
+    duration: newDuration
+  }
+);
+```
+
+**Side Effects:**
+- Updates workout in completed array
+- Re-sorts workouts by completedAt date
+- Preserves original completion date
+
+---
+
+#### `deleteCompletedWorkout(workoutId)` (NEW)
+
+**Description:** Delete a completed workout
+
+**Parameters:**
+- `workoutId` (string): UUID of workout to delete
+
+**Returns:** `boolean` (true if successful)
+
+**Use Case:** Remove workouts within 48-hour edit window
+
+**Example:**
+```javascript
+localStorageService.deleteCompletedWorkout("completed_001");
+```
+
+**Side Effects:**
+- Permanently removes workout from history
+- Cannot be undone
+
+---
+
+#### `isWorkoutEditable(completedAt)` (NEW)
+
+**Description:** Check if a workout can be edited (within 48 hours)
+
+**Parameters:**
+- `completedAt` (string): ISO timestamp of workout completion
+
+**Returns:** `boolean`
+
+**Example:**
+```javascript
+const editable = localStorageService.isWorkoutEditable("2025-11-06T10:00:00.000Z");
+// Returns: true if within 48 hours, false otherwise
+```
+
+---
+
+#### `getEditableHoursRemaining(completedAt)` (NEW)
+
+**Description:** Get remaining hours in the 48-hour edit window
+
+**Parameters:**
+- `completedAt` (string): ISO timestamp of workout completion
+
+**Returns:** `number` (hours remaining, 0-48)
+
+**Example:**
+```javascript
+const hours = localStorageService.getEditableHoursRemaining("2025-11-05T10:00:00.000Z");
+// Returns: 23 (if current time is Nov 6, 11:00)
+```
+
+---
+
 ### Preferences Operations
 
 #### `getPreferences()`
@@ -319,6 +407,169 @@ const prefs = localStorageService.getPreferences();
 ```javascript
 localStorageService.savePreferences({ weightUnit: 'kg', dataVersion: 1 });
 ```
+
+---
+
+### Template Personalization Operations (NEW)
+
+#### `getTemplatePersonalizations()`
+
+**Description:** Retrieve all template personalizations
+
+**Parameters:** None
+
+**Returns:** `{ [templateId]: { [exerciseId]: { sets, maxReps, restTime, lastModified } } }`
+
+**Example:**
+```javascript
+const allPersonalizations = localStorageService.getTemplatePersonalizations();
+// Returns: { "template_001": { "ex_001": { sets: 4, maxReps: [8,6,6,4], restTime: 120, lastModified: "..." } } }
+```
+
+---
+
+#### `getTemplatePersonalizationsById(templateId)`
+
+**Description:** Get all personalizations for a specific template
+
+**Parameters:**
+- `templateId` (string): UUID of template
+
+**Returns:** `{ [exerciseId]: { sets, maxReps, restTime, lastModified } }`
+
+**Example:**
+```javascript
+const personalizations = localStorageService.getTemplatePersonalizationsById("template_001");
+// Returns: { "ex_001": { sets: 4, maxReps: [8,6,6,4], restTime: 120, ... }, "ex_005": { ... } }
+```
+
+---
+
+#### `getExercisePersonalization(templateId, exerciseId)`
+
+**Description:** Get personalization for a specific exercise in a template
+
+**Parameters:**
+- `templateId` (string): UUID of template
+- `exerciseId` (string): UUID of exercise
+
+**Returns:** `{ sets: number, maxReps: number | number[], restTime: number, lastModified: string } | null`
+
+**Example:**
+```javascript
+const config = localStorageService.getExercisePersonalization("template_001", "ex_001");
+// Returns: { sets: 4, maxReps: [8,6,6,4], restTime: 120, lastModified: "2025-11-06T10:30:00.000Z" }
+// or null if not personalized
+```
+
+---
+
+#### `saveExercisePersonalization(templateId, exerciseId, config)`
+
+**Description:** Save or update personalization for an exercise
+
+**Parameters:**
+- `templateId` (string): UUID of template
+- `exerciseId` (string): UUID of exercise
+- `config` (object): Configuration object
+  - `sets` (number): Number of sets (1-10)
+  - `maxReps` (number | number[]): Reps per set (single value or array)
+  - `restTime` (number): Rest time in seconds (10-600)
+
+**Returns:** `boolean` (true if successful)
+
+**Example:**
+```javascript
+localStorageService.saveExercisePersonalization(
+  "template_001",
+  "ex_001",
+  {
+    sets: 4,
+    maxReps: [8, 6, 6, 4],  // Different reps for each set
+    restTime: 120
+  }
+);
+```
+
+**Side Effects:**
+- Adds/updates personalization with timestamp
+- Creates template personalization object if doesn't exist
+
+---
+
+#### `deleteExercisePersonalization(templateId, exerciseId)`
+
+**Description:** Remove personalization for an exercise (revert to defaults)
+
+**Parameters:**
+- `templateId` (string): UUID of template
+- `exerciseId` (string): UUID of exercise
+
+**Returns:** `boolean` (true if successful)
+
+**Example:**
+```javascript
+localStorageService.deleteExercisePersonalization("template_001", "ex_001");
+// Exercise reverts to default sets/reps/rest time
+```
+
+**Side Effects:**
+- Removes personalization entry
+- Cleans up empty template objects
+
+---
+
+#### `deleteTemplatePersonalizations(templateId)`
+
+**Description:** Remove all personalizations for a template
+
+**Parameters:**
+- `templateId` (string): UUID of template
+
+**Returns:** `boolean` (true if successful)
+
+**Example:**
+```javascript
+localStorageService.deleteTemplatePersonalizations("template_001");
+// All exercises in template revert to defaults
+```
+
+---
+
+#### `hasExercisePersonalization(templateId, exerciseId)`
+
+**Description:** Check if an exercise has personalization
+
+**Parameters:**
+- `templateId` (string): UUID of template
+- `exerciseId` (string): UUID of exercise
+
+**Returns:** `boolean`
+
+**Example:**
+```javascript
+const isPersonalized = localStorageService.hasExercisePersonalization("template_001", "ex_001");
+// Returns: true or false
+```
+
+---
+
+#### `getPersonalizationCount(templateId)`
+
+**Description:** Get count of personalized exercises in a template
+
+**Parameters:**
+- `templateId` (string): UUID of template
+
+**Returns:** `number`
+
+**Example:**
+```javascript
+const count = localStorageService.getPersonalizationCount("template_001");
+// Returns: 3 (if 3 exercises are personalized)
+```
+
+**Use Case:** Show badge count on template cards
 
 ---
 
@@ -556,6 +807,77 @@ if (exercise) {
 ```javascript
 const history = getExerciseHistory("ex_001");
 // Use for statistics chart
+```
+
+---
+
+#### `loadWorkoutForEditing(workoutId)` (NEW)
+
+**Description:** Load a completed workout back into active state for editing
+
+**Parameters:**
+- `workoutId` (string): UUID of completed workout
+
+**Returns:** `void`
+
+**Side Effects:**
+- Sets `activeWorkout` state with workout data
+- Marks workout as being in edit mode
+- Preserves original completion date
+- Navigates to `/active-workout`
+
+**Use Case:** Edit workouts within 48-hour window
+
+**Example:**
+```javascript
+loadWorkoutForEditing("completed_001");
+// Workout loads into ActiveWorkout page for editing
+```
+
+---
+
+#### `updateCompletedWorkout(workoutId, updatedWorkout)` (NEW)
+
+**Description:** Update an existing completed workout
+
+**Parameters:**
+- `workoutId` (string): UUID of workout
+- `updatedWorkout` (CompletedWorkout): Updated workout data
+
+**Returns:** `void`
+
+**Side Effects:**
+- Updates workout in `completedWorkouts` state
+- Persists changes to localStorage
+- Re-renders all consumers
+
+**Example:**
+```javascript
+updateCompletedWorkout("completed_001", {
+  ...existingWorkout,
+  exercises: updatedExercises
+});
+```
+
+---
+
+#### `deleteCompletedWorkout(workoutId)` (NEW)
+
+**Description:** Delete a completed workout from history
+
+**Parameters:**
+- `workoutId` (string): UUID of workout
+
+**Returns:** `void`
+
+**Side Effects:**
+- Removes workout from `completedWorkouts` state
+- Deletes from localStorage
+- Re-renders all consumers
+
+**Example:**
+```javascript
+deleteCompletedWorkout("completed_001");
 ```
 
 ---

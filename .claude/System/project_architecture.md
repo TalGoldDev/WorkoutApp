@@ -1,6 +1,6 @@
 # Project Architecture
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-11-06
 
 ---
 
@@ -10,8 +10,11 @@ WorkoutApp is a **Progressive Web App (PWA)** designed to help fitness enthusias
 
 - Pre-built workout templates (PHAT program)
 - Custom workout creation
-- Real-time workout tracking with rest timers
+- Workout template personalization (sets, reps, rest times per exercise)
+- Real-time workout tracking with customizable rest timers
+- Exercise switching during active workouts
 - Historical workout data and progress visualization
+- Workout editing and deletion (within 48 hours of completion)
 - Offline functionality through PWA capabilities
 - Screen wake lock during active workouts
 - Push notifications for rest timer completion
@@ -43,9 +46,11 @@ WorkoutApp is a **Progressive Web App (PWA)** designed to help fitness enthusias
 │   │
 │   ├── components/
 │   │   └── shared/
-│   │       ├── Layout.jsx         # Page wrapper with navigation
-│   │       ├── NavBar.jsx         # Bottom navigation bar (mobile-first)
-│   │       └── Button.jsx         # Reusable button component
+│   │       ├── Layout.jsx                        # Page wrapper with navigation
+│   │       ├── NavBar.jsx                        # Bottom navigation bar (mobile-first)
+│   │       ├── Button.jsx                        # Reusable button component
+│   │       ├── ExercisePersonalizationModal.jsx  # Customize sets, reps, rest time
+│   │       └── ExerciseSwitcherModal.jsx         # Switch exercises during workout
 │   │
 │   ├── contexts/
 │   │   └── WorkoutContext.jsx     # Global state management via Context API
@@ -238,18 +243,20 @@ WorkoutApp is a **Progressive Web App (PWA)** designed to help fitness enthusias
 
 ---
 
-### 8. **Fixed 90-Second Rest Timer**
-**Decision:** Hardcoded 90-second rest period (no customization).
+### 8. **Customizable Rest Timers per Exercise**
+**Decision:** Allow users to customize rest time per exercise (10-600 seconds) with 90-second default.
 
 **Rationale:**
-- Optimal rest time for hypertrophy training
-- Simplifies UI (no timer configuration needed)
-- Aligns with PHAT program methodology
+- 90 seconds is optimal for hypertrophy training (default)
+- Users can adjust for different training styles (powerlifting, endurance)
+- Per-exercise customization allows mixed training approaches
+- Personalizations are saved per template
 
-**Trade-offs:**
-- Not ideal for powerlifting (needs 3-5 min rest)
-- No customization for different exercise types
-- Future enhancement opportunity
+**Implementation:**
+- Default: 90 seconds (aligns with PHAT methodology)
+- Range: 10-600 seconds (10 seconds to 10 minutes)
+- Quick presets: 60s, 90s, 120s, 180s
+- Stored in `TEMPLATE_PERSONALIZATIONS` localStorage key
 
 ---
 
@@ -281,6 +288,76 @@ WorkoutApp is a **Progressive Web App (PWA)** designed to help fitness enthusias
 - No cross-device sync
 - No data recovery if device is lost
 - Can't share workouts with others
+
+---
+
+### 11. **Template Personalization System**
+**Decision:** Allow per-exercise customization (sets, reps, rest time) that's template-specific.
+
+**Rationale:**
+- Users can adapt pre-built templates to their needs
+- Different templates can have different configurations for the same exercise
+- Preserves default templates while allowing customization
+- Stored separately from templates (non-destructive)
+
+**Implementation:**
+- Separate localStorage key: `workout_tracker_template_personalizations`
+- Hierarchical structure: `{ [templateId]: { [exerciseId]: { sets, maxReps, restTime } } }`
+- Per-set rep customization (each set can have different rep targets)
+- Visual indicators show which exercises are personalized
+
+**Trade-offs:**
+- Adds complexity to data model
+- Increases storage usage (minimal impact)
+- Need to merge personalization with template data at runtime
+
+---
+
+### 12. **48-Hour Workout Edit Window**
+**Decision:** Allow editing/deleting completed workouts within 48 hours of completion.
+
+**Rationale:**
+- Users can fix mistakes (wrong weight, missed sets)
+- Delete duplicate or test workouts
+- Long enough for immediate corrections
+- Short enough to preserve historical data integrity
+- Balances flexibility with data immutability
+
+**Implementation:**
+- `isWorkoutEditable(completedAt)` checks if within 48-hour window
+- `getEditableHoursRemaining(completedAt)` shows time left to edit
+- Visual indicators in History page (blue border, "Editable for Xh" badge)
+- Original completion date preserved when editing
+- Confirmation modal for deletions
+
+**Trade-offs:**
+- More complex history UI (edit/delete buttons)
+- Potential for data inconsistency if user edits historical workouts
+- Need to handle edge cases (editing while another workout is active)
+
+---
+
+### 13. **Exercise Switching During Workouts**
+**Decision:** Allow users to switch exercises mid-workout while preserving set progress.
+
+**Rationale:**
+- Gym equipment availability changes
+- Users may want to substitute similar exercises
+- Injuries or discomfort may require alternatives
+- Enhances flexibility without abandoning workout
+
+**Implementation:**
+- Modal with search and muscle group filtering
+- Shows which exercises are already in workout
+- Preserves set structure when switching (same number of sets)
+- Weight and completed sets carry forward when switching
+- Visual indicators prevent duplicate exercises
+
+**Trade-offs:**
+- Adds UI complexity during workout
+- May lead to inconsistent workout logs
+- Can't switch to exercises already in workout
+- Original exercise name not preserved in history
 
 ---
 
@@ -319,6 +396,44 @@ WorkoutApp is a **Progressive Web App (PWA)** designed to help fitness enthusias
    └─> Selects exercises from library
    └─> Configures sets per exercise
    └─> Saves as template or starts immediately
+
+6. Personalize Workout Template
+   └─> User taps "Customize" on a template (Home or Create page)
+   └─> Opens ExercisePersonalizationModal
+   └─> Adjusts sets (1-10)
+   └─> Sets per-set rep targets (1-50 each)
+   └─> Customizes rest time (10-600 seconds)
+   └─> Saves personalization
+   └─> Exercise shows personalization indicator (star badge)
+   └─> Personalizations apply only to that specific template
+
+7. Switch Exercise During Workout
+   └─> User in active workout
+   └─> Taps "Switch Exercise" button on an exercise
+   └─> Opens ExerciseSwitcherModal
+   └─> Searches or filters by muscle group
+   └─> Selects alternative exercise
+   └─> Exercise replaced, set structure preserved
+   └─> Weight and progress carry forward
+
+8. Edit Recent Workout
+   └─> User navigates to History
+   └─> Sees workouts completed within 48 hours (blue border)
+   └─> Badge shows "Editable for Xh"
+   └─> Taps "Edit" button
+   └─> Workout loads back into ActiveWorkout page
+   └─> Header shows "Editing workout" badge
+   └─> User corrects weights, reps, or sets
+   └─> Taps "Save Changes"
+   └─> Workout updated in history
+   └─> Original completion date preserved
+
+9. Delete Recent Workout
+   └─> User navigates to History
+   └─> Taps "Delete" button on editable workout
+   └─> Confirmation modal appears
+   └─> User confirms deletion
+   └─> Workout removed from history
 ```
 
 ---
@@ -418,6 +533,28 @@ App.jsx (Router + WorkoutProvider)
 - Props: `children`, `onClick`, `variant`, `size`, `disabled`, `className`, `type`
 - Variants: `primary`, `secondary`, `success`, `danger`, `ghost`
 - Sizes: `sm`, `md`, `lg`
+
+**ExercisePersonalizationModal.jsx**
+- Purpose: Customize exercise parameters for a specific workout template
+- Responsibilities: Allow users to modify sets, per-set reps, and rest time
+- Props: `isOpen`, `onClose`, `exercise`, `templateId`, `currentConfig`, `defaultConfig`, `onSave`, `onReset`, `currentSetsInWorkout`
+- Features:
+  - Adjust number of sets (1-10)
+  - Set different rep targets for each set (1-50 reps)
+  - Quick set all reps to same value
+  - Customize rest time (10-600 seconds) with preset buttons
+  - Visual indicators for personalized exercises
+  - Reset to default configuration
+
+**ExerciseSwitcherModal.jsx**
+- Purpose: Switch exercises during an active workout
+- Responsibilities: Allow users to replace an exercise with another from the library
+- Props: `isOpen`, `onClose`, `onSelectExercise`, `currentExerciseId`, `allExercises`, `exercisesInWorkout`
+- Features:
+  - Search exercises by name or muscle group
+  - Filter by muscle group tabs
+  - Visual indicators for current exercise and exercises already in workout
+  - Prevents switching to the same exercise
 
 ---
 
