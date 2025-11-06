@@ -4,7 +4,7 @@ import { Layout } from '../components/shared/Layout';
 import { getExerciseHistory } from '../services/localStorageService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, Target, Calendar } from 'lucide-react';
+import { TrendingUp, Target, Calendar, ArrowUp } from 'lucide-react';
 
 export const Statistics = () => {
   const { exercises, completedWorkouts } = useWorkoutContext();
@@ -55,12 +55,21 @@ export const Statistics = () => {
     return (
       <Layout>
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Statistics</h1>
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <TrendingUp size={48} className="mx-auto mb-4 text-primary dark:text-blue-400" />
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistics</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Track your strength progress</p>
+          </div>
+
+          {/* Empty State */}
           <div className="text-center py-12">
-            <TrendingUp size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-600" />
-            <p className="text-gray-500 dark:text-gray-400">No exercise data yet</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-              Complete workouts to see your progress
+            <div className="bg-gradient-to-br from-primary/10 to-success/10 dark:from-primary/20 dark:to-success/20 rounded-full w-32 h-32 mx-auto mb-6 flex items-center justify-center">
+              <Target size={64} className="text-primary dark:text-blue-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No data yet</h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Complete workouts to see your progress statistics
             </p>
           </div>
         </div>
@@ -71,7 +80,12 @@ export const Statistics = () => {
   return (
     <Layout>
       <div className="p-6 pb-24">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Statistics</h1>
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <TrendingUp size={48} className="mx-auto mb-4 text-primary dark:text-blue-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Statistics</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Track your strength progress</p>
+        </div>
 
         {/* Exercise Selector */}
         <div className="mb-6">
@@ -91,6 +105,26 @@ export const Statistics = () => {
             ))}
           </select>
         </div>
+
+        {/* Prompt to Select Exercise */}
+        {!selectedExerciseId && (
+          <div className="text-center py-16">
+            {/* Animated Arrow */}
+            <div className="flex justify-center mb-4 animate-bounce">
+              <ArrowUp size={48} className="text-primary dark:text-blue-400" />
+            </div>
+
+            {/* Message */}
+            <div>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Select an exercise to display
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Choose from the dropdown above to view your progress
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Stats and Graph */}
         {selectedExerciseId && historyData.length > 0 && stats && (
