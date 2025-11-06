@@ -140,6 +140,10 @@ export const WorkoutProvider = ({ children }) => {
       };
 
       storage.updateCompletedWorkout(originalWorkoutId, updatedWorkout);
+
+      // Process indication dismissals
+      storage.processWorkoutIndicationDismissals(updatedWorkout);
+
       setCompletedWorkouts(storage.getCompletedWorkouts());
       setActiveWorkout(null);
       setEditMode(false);
@@ -158,6 +162,10 @@ export const WorkoutProvider = ({ children }) => {
       };
 
       storage.addCompletedWorkout(completedWorkout);
+
+      // Process indication dismissals
+      storage.processWorkoutIndicationDismissals(completedWorkout);
+
       setCompletedWorkouts(storage.getCompletedWorkouts());
       setActiveWorkout(null);
       return completedWorkout;

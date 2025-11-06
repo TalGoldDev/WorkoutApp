@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   COMPLETED_WORKOUTS: 'workout_tracker_completed',
   PREFERENCES: 'workout_tracker_preferences',
   TEMPLATE_PERSONALIZATIONS: 'workout_tracker_template_personalizations',
+  INDICATION_DISMISSALS: 'workout_tracker_indication_dismissals',
 };
 
 // Data version - increment this when seed data changes
@@ -330,19 +331,206 @@ export const getPersonalizationCount = (templateId) => {
   return Object.keys(templatePersonalizations).length;
 };
 
+// ============= INDICATION DISMISSALS =============
+
+/**
+ * Get all indication dismissals
+ */
+const getIndicationDismissals = () => {
+  return getData(STORAGE_KEYS.INDICATION_DISMISSALS) || {};
+};
+
+/**
+ * Save indication dismissals
+ */
+const saveIndicationDismissals = (dismissals) => {
+  setData(STORAGE_KEYS.INDICATION_DISMISSALS, dismissals);
+};
+
+/**
+ * Get dismissal info for a specific exercise and type
+ * @param {string} exerciseId
+ * @param {'increase' | 'decrease'} type
+ * @returns {object | null} Dismissal info with { dismissedAt, lastWorkoutId } or null
+ */
+export const getIndicationDismissal = (exerciseId, type) => {
+  const dismissals = getIndicationDismissals();
+  return dismissals[exerciseId]?.[type] || null;
+};
+
+/**
+ * Dismiss increase weight indication for an exercise
+ * @param {string} exerciseId
+ * @param {string} workoutId - Optional specific workout ID to use for dismissal
+ */
+export const dismissIncreaseWeightIndication = (exerciseId, workoutId = null) => {
+  const dismissals = getIndicationDismissals();
+  const workouts = getCompletedWorkouts();
+  const latestWorkout = workoutId
+    ? workouts.find((w) => w.id === workoutId)
+    : workouts.find((w) => w.exercises.some((ex) => ex.exerciseId === exerciseId));
+
+  if (!dismissals[exerciseId]) {
+    dismissals[exerciseId] = {};
+  }
+
+  dismissals[exerciseId].increase = {
+    dismissedAt: Date.now(),
+    lastWorkoutId: latestWorkout?.id || null,
+  };
+
+  saveIndicationDismissals(dismissals);
+};
+
+/**
+ * Dismiss reduce weight indication for an exercise
+ * @param {string} exerciseId
+ * @param {string} workoutId - Optional specific workout ID to use for dismissal
+ */
+export const dismissReduceWeightIndication = (exerciseId, workoutId = null) => {
+  const dismissals = getIndicationDismissals();
+  const workouts = getCompletedWorkouts();
+  const latestWorkout = workoutId
+    ? workouts.find((w) => w.id === workoutId)
+    : workouts.find((w) => w.exercises.some((ex) => ex.exerciseId === exerciseId));
+
+  if (!dismissals[exerciseId]) {
+    dismissals[exerciseId] = {};
+  }
+
+  dismissals[exerciseId].decrease = {
+    dismissedAt: Date.now(),
+    lastWorkoutId: latestWorkout?.id || null,
+  };
+
+  saveIndicationDismissals(dismissals);
+};
+
+/**
+ * Clear dismissal for a specific indication type
+ * @param {string} exerciseId
+ * @param {'increase' | 'decrease'} type
+ */
+export const clearIndicationDismissal = (exerciseId, type) => {
+  const dismissals = getIndicationDismissals();
+  if (dismissals[exerciseId]) {
+    delete dismissals[exerciseId][type];
+    if (Object.keys(dismissals[exerciseId]).length === 0) {
+      delete dismissals[exerciseId];
+    }
+    saveIndicationDismissals(dismissals);
+  }
+};
+
+/**
+ * Process indication dismissals when a workout is completed
+ * - Only dismiss reduce indication if it's currently showing OR user reduced weight
+ * - Dismiss increase indication if user increased weight
+ * @param {object} completedWorkout The workout that was just completed
+ */
+export const processWorkoutIndicationDismissals = (completedWorkout) => {
+  if (!completedWorkout || !completedWorkout.exercises) return;
+
+  const workouts = getCompletedWorkouts();
+
+  completedWorkout.exercises.forEach((exercise) => {
+    const exerciseId = exercise.exerciseId;
+
+    // Get the weight used in this workout (prioritize workingWeight)
+    const currentWeight = exercise.workingWeight ||
+                          exercise.sets.find((set) => set.weight > 0)?.weight ||
+                          0;
+
+    // Find the previous workout with this exercise
+    const previousWorkout = workouts.find(
+      (w) =>
+        w.id !== completedWorkout.id &&
+        w.exercises.some((ex) => ex.exerciseId === exerciseId)
+    );
+
+    let previousWeight = 0;
+    if (previousWorkout) {
+      const previousExercise = previousWorkout.exercises.find(
+        (ex) => ex.exerciseId === exerciseId
+      );
+      // Prioritize workingWeight for previous workout too
+      previousWeight = previousExercise?.workingWeight ||
+                      previousExercise?.sets.find((set) => set.weight > 0)?.weight ||
+                      0;
+    }
+
+    // Check if the reduce indication WAS showing at the START of this workout
+    // To do this, we need to check shouldReduceWeight EXCLUDING the current completed workout
+    // Find workouts with this exercise, excluding the one that just completed
+    const workoutsBeforeThis = workouts.filter(
+      (w) => w.id !== completedWorkout.id && w.exercises.some((ex) => ex.exerciseId === exerciseId)
+    );
+
+    // Temporarily check if indication was showing before this workout
+    // We'll do a simplified check here without calling shouldReduceWeight recursively
+    const dismissal = getIndicationDismissal(exerciseId, 'decrease');
+    let eligibleWorkouts = workoutsBeforeThis;
+
+    if (dismissal && dismissal.lastWorkoutId) {
+      const dismissalIndex = eligibleWorkouts.findIndex((w) => w.id === dismissal.lastWorkoutId);
+      if (dismissalIndex !== -1) {
+        eligibleWorkouts = eligibleWorkouts.slice(0, dismissalIndex);
+      }
+    }
+
+    // Check if we had at least 3 workouts with failures before this one
+    if (eligibleWorkouts.length >= 3) {
+      const lastThree = eligibleWorkouts.slice(0, 3);
+      const allHaveFailures = lastThree.every((workout) => {
+        const ex = workout.exercises.find((e) => e.exerciseId === exerciseId);
+        return ex && ex.sets && ex.sets.some((set) => !set.completed || set.completedReps < set.maxReps);
+      });
+
+      if (allHaveFailures) {
+        // Indication was showing, dismiss it now
+        dismissReduceWeightIndication(exerciseId, completedWorkout.id);
+      }
+    }
+
+    // Also dismiss reduce indication if user reduced weight
+    if (currentWeight > 0 && previousWeight > 0 && currentWeight < previousWeight) {
+      dismissReduceWeightIndication(exerciseId, completedWorkout.id);
+    }
+
+    // Dismiss increase indication if weight was increased
+    if (currentWeight > 0 && previousWeight > 0 && currentWeight > previousWeight) {
+      dismissIncreaseWeightIndication(exerciseId, completedWorkout.id);
+    }
+  });
+};
+
 // ============= WEIGHT RECOMMENDATION SYSTEM =============
 
 /**
  * Check if user should increase weight for an exercise
  * Returns true if the last 2 workouts had ALL sets completed with max reps
+ * Respects dismissals - only shows indication if conditions are met AFTER user acted on previous indication
  */
 export const shouldIncreaseWeight = (exerciseId) => {
   const workouts = getCompletedWorkouts();
 
   // Filter workouts that contain this exercise
-  const workoutsWithExercise = workouts.filter((workout) => {
+  let workoutsWithExercise = workouts.filter((workout) => {
     return workout.exercises.some((ex) => ex.exerciseId === exerciseId);
   });
+
+  // Check if indication was dismissed (user increased weight previously)
+  const dismissal = getIndicationDismissal(exerciseId, 'increase');
+  if (dismissal && dismissal.lastWorkoutId) {
+    // Find the index of the dismissal workout
+    const dismissalIndex = workoutsWithExercise.findIndex((w) => w.id === dismissal.lastWorkoutId);
+
+    if (dismissalIndex !== -1) {
+      // Only include workouts that come BEFORE the dismissal workout in the list
+      // (since the list is sorted descending by date, earlier indices are more recent)
+      workoutsWithExercise = workoutsWithExercise.slice(0, dismissalIndex);
+    }
+  }
 
   // Need at least 2 workouts to check
   if (workoutsWithExercise.length < 2) {
@@ -370,20 +558,39 @@ export const shouldIncreaseWeight = (exerciseId) => {
     }
   }
 
+  // Conditions are met! Clear the dismissal so indication can show again
+  if (dismissal) {
+    clearIndicationDismissal(exerciseId, 'increase');
+  }
+
   return true;
 };
 
 /**
  * Check if user should reduce weight for an exercise
  * Returns true if the last 3 workouts had at least one set that failed to complete max reps
+ * Respects dismissals - only shows indication if conditions are met AFTER user acted on previous indication
  */
 export const shouldReduceWeight = (exerciseId) => {
   const workouts = getCompletedWorkouts();
 
   // Filter workouts that contain this exercise
-  const workoutsWithExercise = workouts.filter((workout) => {
+  let workoutsWithExercise = workouts.filter((workout) => {
     return workout.exercises.some((ex) => ex.exerciseId === exerciseId);
   });
+
+  // Check if indication was dismissed (user reduced weight or completed workout)
+  const dismissal = getIndicationDismissal(exerciseId, 'decrease');
+  if (dismissal && dismissal.lastWorkoutId) {
+    // Find the index of the dismissal workout
+    const dismissalIndex = workoutsWithExercise.findIndex((w) => w.id === dismissal.lastWorkoutId);
+
+    if (dismissalIndex !== -1) {
+      // Only include workouts that come BEFORE the dismissal workout in the list
+      // (since the list is sorted descending by date, earlier indices are more recent)
+      workoutsWithExercise = workoutsWithExercise.slice(0, dismissalIndex);
+    }
+  }
 
   // Need at least 3 workouts to check
   if (workoutsWithExercise.length < 3) {
@@ -412,6 +619,11 @@ export const shouldReduceWeight = (exerciseId) => {
     }
   }
 
+  // Conditions are met! Clear the dismissal so indication can show again
+  if (dismissal) {
+    clearIndicationDismissal(exerciseId, 'decrease');
+  }
+
   return true;
 };
 
@@ -435,6 +647,7 @@ export const getWeightRecommendation = (exerciseId) => {
 /**
  * Get the last used weight for an exercise
  * Returns the weight from the most recent workout, or 0 if no history exists
+ * Prioritizes workingWeight over set weights for better persistence
  */
 export const getLastUsedWeight = (exerciseId) => {
   const workouts = getCompletedWorkouts();
@@ -443,11 +656,19 @@ export const getLastUsedWeight = (exerciseId) => {
   for (const workout of workouts) {
     const exercise = workout.exercises.find((ex) => ex.exerciseId === exerciseId);
 
-    if (exercise && exercise.sets && exercise.sets.length > 0) {
-      // Get the weight from the first set (or could use max weight)
-      // Using first set as it represents the working weight for that session
-      const weight = exercise.sets[0].weight || 0;
-      return weight;
+    if (exercise) {
+      // Priority 1: Use workingWeight if available (this is the user's set weight)
+      if (exercise.workingWeight && exercise.workingWeight > 0) {
+        return exercise.workingWeight;
+      }
+
+      // Priority 2: Find any set with a weight > 0
+      if (exercise.sets && exercise.sets.length > 0) {
+        const setWithWeight = exercise.sets.find((set) => set.weight > 0);
+        if (setWithWeight) {
+          return setWithWeight.weight;
+        }
+      }
     }
   }
 
