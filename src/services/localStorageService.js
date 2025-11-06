@@ -779,6 +779,49 @@ export const getWeeklySetsOverview = (exerciseId, weekOffset = 0) => {
   };
 };
 
+/**
+ * Get the week range for an exercise (earliest and latest weeks with data)
+ * @param {string} exerciseId - Exercise ID
+ * @returns {Object} { earliestWeekOffset, latestWeekOffset, hasData } relative to current week
+ */
+export const getExerciseWeekRange = (exerciseId) => {
+  const workouts = getCompletedWorkouts();
+
+  // Filter workouts that contain this exercise
+  const workoutsWithExercise = workouts.filter(workout => {
+    return workout.exercises.some(ex => ex.exerciseId === exerciseId && ex.sets && ex.sets.some(s => s.completed));
+  });
+
+  if (workoutsWithExercise.length === 0) {
+    return { earliestWeekOffset: 0, latestWeekOffset: 0, hasData: false };
+  }
+
+  // Calculate current week start
+  const now = new Date();
+  const currentDay = now.getDay();
+  const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setDate(now.getDate() - daysFromMonday);
+  currentWeekStart.setHours(0, 0, 0, 0);
+
+  let earliestWeekOffset = 0;
+  let latestWeekOffset = 0;
+
+  workoutsWithExercise.forEach(workout => {
+    const workoutDate = new Date(workout.completedAt);
+
+    // Calculate which week this workout falls into
+    const daysDiff = Math.floor((currentWeekStart - workoutDate) / (1000 * 60 * 60 * 24));
+    const weekOffset = -Math.floor(daysDiff / 7);
+
+    earliestWeekOffset = Math.min(earliestWeekOffset, weekOffset);
+    latestWeekOffset = Math.max(latestWeekOffset, weekOffset);
+  });
+
+  return { earliestWeekOffset, latestWeekOffset, hasData: true };
+};
+
 // ============= SEED DATA =============
 
 /**

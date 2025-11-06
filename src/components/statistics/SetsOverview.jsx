@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getWeeklySetsOverview } from '../../services/localStorageService';
+import { getWeeklySetsOverview, getExerciseWeekRange } from '../../services/localStorageService';
 
 export const SetsOverview = ({ exerciseId }) => {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -11,43 +11,39 @@ export const SetsOverview = ({ exerciseId }) => {
     setWeekOffset(0);
   }, [exerciseId]);
 
+  // Get week range for this exercise
+  const weekRange = useMemo(() => {
+    if (!exerciseId) return { earliestWeekOffset: 0, latestWeekOffset: 0, hasData: false };
+    return getExerciseWeekRange(exerciseId);
+  }, [exerciseId]);
+
   // Get week data
   const weekData = useMemo(() => {
     if (!exerciseId) return null;
     return getWeeklySetsOverview(exerciseId, weekOffset);
   }, [exerciseId, weekOffset]);
 
-  // Check if we can navigate to previous week
+  // Check if we can navigate to previous week (further back in time)
   const canNavigatePrevious = useMemo(() => {
-    if (!weekData) return false;
-    // Can navigate if there are sets in previous week
-    const prevWeekData = getWeeklySetsOverview(exerciseId, weekOffset - 1);
-    return prevWeekData.sets.length > 0;
-  }, [exerciseId, weekOffset, weekData]);
+    if (!exerciseId) return false;
+    // Can go back if we haven't reached the earliest week with data
+    return weekOffset > weekRange.earliestWeekOffset;
+  }, [exerciseId, weekOffset, weekRange]);
 
-  // Check if we can navigate to next week
+  // Check if we can navigate to next week (forward in time, toward present)
   const canNavigateNext = useMemo(() => {
-    // Can't navigate to future weeks
-    const now = new Date();
-    const currentDay = now.getDay();
-    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
-
-    const currentWeekStart = new Date(now);
-    currentWeekStart.setDate(now.getDate() - daysFromMonday);
-    currentWeekStart.setHours(0, 0, 0, 0);
-
-    return weekData && weekData.weekStart < currentWeekStart;
-  }, [weekData]);
+    if (!exerciseId) return false;
+    // Can go forward if we're not at the current week (week 0)
+    return weekOffset < 0;
+  }, [exerciseId, weekOffset]);
 
   // Don't show if there's never been any data for this exercise
   if (!weekData) {
     return null;
   }
 
-  // Check if there's any data at all for this exercise (across all weeks)
-  const hasAnyData = canNavigatePrevious || weekData.sets.length > 0 || canNavigateNext;
-
-  if (!hasAnyData) {
+  // Don't show if there's no data for this exercise at all
+  if (!weekRange.hasData) {
     return null;
   }
 
