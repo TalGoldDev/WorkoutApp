@@ -132,7 +132,7 @@ export const Home = () => {
                         )}
                         <button
                           onClick={() => handleEditTemplate(template)}
-                          className="touch-target p-1.5 text-primary dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          className="touch-target p-1.5 text-primary dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors flex items-center justify-center"
                           title="Edit workout"
                         >
                           <Pencil size={16} />
@@ -141,13 +141,13 @@ export const Home = () => {
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleDeleteTemplate(template.id)}
-                              className="touch-target px-2 py-1 text-xs font-medium text-white bg-red-500 dark:bg-red-600 rounded-lg hover:bg-red-600 dark:hover:bg-red-700"
+                              className="touch-target px-2 py-1 text-xs font-medium text-white bg-red-500 dark:bg-red-600 rounded-lg hover:bg-red-600 dark:hover:bg-red-700 flex items-center justify-center"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => setDeleteConfirmId(null)}
-                              className="touch-target px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                              className="touch-target px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center"
                             >
                               Cancel
                             </button>
@@ -155,7 +155,7 @@ export const Home = () => {
                         ) : (
                           <button
                             onClick={() => setDeleteConfirmId(template.id)}
-                            className="touch-target p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            className="touch-target p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors flex items-center justify-center"
                             title="Delete workout"
                           >
                             <Trash2 size={16} />
