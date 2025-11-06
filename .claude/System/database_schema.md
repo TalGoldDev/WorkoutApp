@@ -1,6 +1,6 @@
 # Database Schema
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-11-06
 
 **Storage Type:** Browser localStorage (Client-side NoSQL key-value store)
 
@@ -10,14 +10,15 @@
 
 ## Overview
 
-WorkoutApp uses browser **localStorage** for all data persistence. There is no traditional database backend. All data is stored as JSON strings under 4 primary keys:
+WorkoutApp uses browser **localStorage** for all data persistence. There is no traditional database backend. All data is stored as JSON strings under 5 primary keys:
 
-| Storage Key                      | Purpose                          | Data Structure    |
-|----------------------------------|----------------------------------|-------------------|
-| `workout_tracker_exercises`      | Available exercise library       | Array of objects  |
-| `workout_tracker_templates`      | Workout templates                | Array of objects  |
-| `workout_tracker_completed`      | Completed workout history        | Array of objects  |
-| `workout_tracker_preferences`    | User preferences & app settings  | Object            |
+| Storage Key                              | Purpose                                    | Data Structure    |
+|------------------------------------------|--------------------------------------------|-------------------|
+| `workout_tracker_exercises`              | Available exercise library                 | Array of objects  |
+| `workout_tracker_templates`              | Workout templates                          | Array of objects  |
+| `workout_tracker_completed`              | Completed workout history                  | Array of objects  |
+| `workout_tracker_preferences`            | User preferences & app settings            | Object            |
+| `workout_tracker_template_personalizations` | Per-template exercise customizations    | Nested object     |
 
 ---
 
@@ -172,13 +173,14 @@ interface CompletedExercise {
   emoji: string;                 // Denormalized for faster display
   workingWeight: number;         // Weight used for all sets (in user's preferred unit)
   sets: CompletedSet[];          // Per-set tracking data
+  restTime?: number;             // Rest time in seconds (optional, defaults to 90)
 }
 
 interface CompletedSet {
   setNumber: number;             // Set number (1-indexed)
   weight: number;                // Weight used for this set (usually same as workingWeight)
-  reps: number;                  // Target reps for this set
-  maxReps: number;               // Maximum reps initially set
+  reps: number;                  // Target reps for this set (can vary per set)
+  maxReps: number;               // Maximum reps initially set (can vary per set)
   completedReps: number;         // Actual reps completed
   completed: boolean;            // true when set is marked complete
 }
@@ -291,6 +293,81 @@ interface Preferences {
 
 ---
 
+### 5. `workout_tracker_template_personalizations`
+
+**Purpose:** Stores per-template, per-exercise customizations (sets, reps, rest time)
+
+**Data Type:** `Object` (nested structure)
+
+**Schema:**
+
+```typescript
+interface TemplatePersonalizations {
+  [templateId: string]: {
+    [exerciseId: string]: ExercisePersonalization;
+  };
+}
+
+interface ExercisePersonalization {
+  sets: number;                    // Customized number of sets (1-10)
+  maxReps: number | number[];      // Reps per set (single value or array for per-set)
+  restTime: number;                // Rest time in seconds (10-600)
+  lastModified: string;            // ISO 8601 timestamp of last modification
+}
+```
+
+**Constraints:**
+- `templateId`: Must reference valid template ID
+- `exerciseId`: Must reference valid exercise ID
+- `sets`: Integer between 1-10
+- `maxReps`:
+  - Single integer (1-50) if all sets have same reps
+  - Array of integers if each set has different reps
+- `restTime`: Integer between 10-600 seconds
+- `lastModified`: ISO timestamp
+
+**Example Record:**
+
+```json
+{
+  "template_phat_upper_power": {
+    "ex_001": {
+      "sets": 4,
+      "maxReps": [8, 6, 6, 4],
+      "restTime": 120,
+      "lastModified": "2025-11-06T10:30:00.000Z"
+    },
+    "ex_005": {
+      "sets": 3,
+      "maxReps": 10,
+      "restTime": 90,
+      "lastModified": "2025-11-06T10:35:00.000Z"
+    }
+  },
+  "template_custom_001": {
+    "ex_012": {
+      "sets": 5,
+      "maxReps": 12,
+      "restTime": 60,
+      "lastModified": "2025-11-06T11:00:00.000Z"
+    }
+  }
+}
+```
+
+**Usage:**
+- Personalizations are template-specific (same exercise can have different settings in different templates)
+- Merged with template data at workout start
+- Overrides default exercise settings
+- Visual indicators show which exercises are personalized
+- Can be reset to defaults (deletes personalization entry)
+
+**Relationships:**
+- `templateId` → `workout_tracker_templates[].id` (foreign key)
+- `exerciseId` → `workout_tracker_exercises[].id` (foreign key)
+
+---
+
 ## Data Relationships
 
 ### Entity Relationship Diagram
@@ -345,6 +422,23 @@ interface Preferences {
 │ weightUnit      │
 │ dataVersion     │
 └─────────────────┘
+
+┌──────────────────────────────┐
+│ TemplatePersonalizations     │
+│   (personalizations)         │
+│──────────────────────────────│
+│ [templateId] (FK)            │
+│   └─[exerciseId] (FK)        │
+│       ├─sets                 │
+│       ├─maxReps              │
+│       ├─restTime             │
+│       └─lastModified         │
+└──────────────────────────────┘
+         │         │
+         │         └────────────────┐
+         │                          │
+         ▼                          ▼
+  WorkoutTemplate            Exercise
 ```
 
 ### Relationship Details
@@ -437,7 +531,81 @@ localStorageService.deleteWorkoutTemplate(templateId);
 // Filters out template from array
 ```
 
-**Note:** No delete function for completed workouts (history is immutable)
+**3. Delete Completed Workout** (NEW - within 48 hours)
+```javascript
+localStorageService.deleteCompletedWorkout(workoutId);
+// Removes workout from completed array
+```
+
+**4. Delete Exercise Personalization**
+```javascript
+localStorageService.deleteExercisePersonalization(templateId, exerciseId);
+// Removes personalization for specific exercise in template
+```
+
+**5. Delete All Template Personalizations**
+```javascript
+localStorageService.deleteTemplatePersonalizations(templateId);
+// Removes all personalizations for a template
+```
+
+### Update Operations (NEW)
+
+**1. Update Completed Workout**
+```javascript
+localStorageService.updateCompletedWorkout(workoutId, updatedWorkout);
+// Updates existing workout (used for editing within 48-hour window)
+```
+
+### Personalization Operations (NEW)
+
+**1. Get Template Personalizations**
+```javascript
+const personalizations = localStorageService.getTemplatePersonalizationsById(templateId);
+// Returns: { [exerciseId]: { sets, maxReps, restTime, lastModified } }
+```
+
+**2. Get Exercise Personalization**
+```javascript
+const config = localStorageService.getExercisePersonalization(templateId, exerciseId);
+// Returns: { sets, maxReps, restTime, lastModified } or null
+```
+
+**3. Save Exercise Personalization**
+```javascript
+localStorageService.saveExercisePersonalization(templateId, exerciseId, {
+  sets: 4,
+  maxReps: [8, 6, 6, 4],
+  restTime: 120
+});
+// Saves or updates personalization with timestamp
+```
+
+**4. Check if Personalized**
+```javascript
+const isPersonalized = localStorageService.hasExercisePersonalization(templateId, exerciseId);
+// Returns: boolean
+```
+
+**5. Get Personalization Count**
+```javascript
+const count = localStorageService.getPersonalizationCount(templateId);
+// Returns: number of personalized exercises in template
+```
+
+### Workout Editability Checks (NEW)
+
+**1. Check if Workout is Editable**
+```javascript
+const editable = localStorageService.isWorkoutEditable(completedAt);
+// Returns: boolean (true if within 48 hours)
+```
+
+**2. Get Editable Hours Remaining**
+```javascript
+const hours = localStorageService.getEditableHoursRemaining(completedAt);
+// Returns: number of hours remaining in edit window (0-48)
+```
 
 ---
 
@@ -733,6 +901,24 @@ interface Schedule {
 - 27 seed exercises
 - 4 PHAT templates
 - Preferences with data versioning
+
+### Version 2 (2025-11-06)
+- Added `workout_tracker_template_personalizations` storage key
+- Template personalization system:
+  - Per-template, per-exercise customizations
+  - Customizable sets (1-10)
+  - Per-set rep targets (array or single value)
+  - Customizable rest time (10-600 seconds)
+- Workout history editing:
+  - `updateCompletedWorkout()` method
+  - `deleteCompletedWorkout()` method
+  - `isWorkoutEditable()` check (48-hour window)
+  - `getEditableHoursRemaining()` helper
+- Enhanced CompletedExercise schema:
+  - Added optional `restTime` field
+  - Documented per-set `maxReps` variation
+- Exercise switching during workouts (no schema changes, runtime only)
+- Updated seed data to version 2
 
 ---
 
