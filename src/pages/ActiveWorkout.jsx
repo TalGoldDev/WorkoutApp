@@ -8,6 +8,7 @@ import { ExerciseSwitcherModal } from '../components/shared/ExerciseSwitcherModa
 import { Check, Minus, Plus, X, Settings2, RefreshCw } from 'lucide-react';
 import { formatWeight } from '../utils/helpers';
 import { getServiceWorkerRegistration } from '../utils/serviceWorkerRegistration';
+import { getWeightRecommendation } from '../services/localStorageService';
 
 export const ActiveWorkout = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export const ActiveWorkout = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
+  const [weightRecommendations, setWeightRecommendations] = useState({});
   const notificationsEnabledRef = useRef(false);
   const wakeLockRef = useRef(null);
   const swRegistrationRef = useRef(null);
@@ -50,6 +52,16 @@ export const ActiveWorkout = () => {
       return;
     }
     setCurrentExercises(activeWorkout.exercises);
+
+    // Calculate weight recommendations for each exercise
+    const recommendations = {};
+    activeWorkout.exercises.forEach((exercise) => {
+      const recommendation = getWeightRecommendation(exercise.exerciseId);
+      if (recommendation) {
+        recommendations[exercise.exerciseId] = recommendation;
+      }
+    });
+    setWeightRecommendations(recommendations);
   }, [activeWorkout, navigate]);
 
   // Check notification permission and get service worker on mount
@@ -549,30 +561,54 @@ export const ActiveWorkout = () => {
                 </div>
 
                 {/* Single Weight Input for Exercise */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleIncrementExerciseWeight(exerciseIdx, -2.5)}
-                    className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
-                  >
-                    <Minus size={18} />
-                  </button>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={exercise.workingWeight || ''}
-                    onChange={(e) =>
-                      handleExerciseWeightChange(exerciseIdx, e.target.value)
-                    }
-                    placeholder="0"
-                    className="w-24 px-3 py-2 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                  <span className="text-sm text-gray-600">kg</span>
-                  <button
-                    onClick={() => handleIncrementExerciseWeight(exerciseIdx, 2.5)}
-                    className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
-                  >
-                    <Plus size={18} />
-                  </button>
+                <div className="space-y-2">
+                  {/* Weight Recommendation Badge */}
+                  {weightRecommendations[exercise.exerciseId] === 'increase' && (
+                    <div className="bg-green-100 border border-green-300 text-green-800 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 animate-pulse">
+                      <span>💪</span>
+                      <span>Time to increase weight!</span>
+                      <span>💪</span>
+                    </div>
+                  )}
+                  {weightRecommendations[exercise.exerciseId] === 'decrease' && (
+                    <div className="bg-orange-100 border border-orange-300 text-orange-800 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 animate-pulse">
+                      <span>🎯</span>
+                      <span>Consider reducing weight</span>
+                    </div>
+                  )}
+
+                  {/* Weight Input with Conditional Glow */}
+                  <div className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+                    weightRecommendations[exercise.exerciseId] === 'increase'
+                      ? 'bg-green-50 border-2 border-green-400 shadow-lg shadow-green-200 animate-pulse'
+                      : weightRecommendations[exercise.exerciseId] === 'decrease'
+                      ? 'bg-orange-50 border-2 border-orange-400 shadow-lg shadow-orange-200 animate-pulse'
+                      : ''
+                  }`}>
+                    <button
+                      onClick={() => handleIncrementExerciseWeight(exerciseIdx, -2.5)}
+                      className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
+                    >
+                      <Minus size={18} />
+                    </button>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={exercise.workingWeight || ''}
+                      onChange={(e) =>
+                        handleExerciseWeightChange(exerciseIdx, e.target.value)
+                      }
+                      placeholder="0"
+                      className="w-24 px-3 py-2 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                    <span className="text-sm text-gray-600">kg</span>
+                    <button
+                      onClick={() => handleIncrementExerciseWeight(exerciseIdx, 2.5)}
+                      className="touch-target bg-gray-200 hover:bg-gray-300 rounded-lg p-2"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
