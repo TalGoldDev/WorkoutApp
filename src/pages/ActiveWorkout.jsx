@@ -159,13 +159,13 @@ export const ActiveWorkout = () => {
     }
   };
 
-  const startRestTimer = () => {
+  const startRestTimer = (seconds = 90) => {
     // Clear any existing timer
     if (timerInterval) {
       clearInterval(timerInterval);
     }
 
-    setRestTimer(90); // 90 seconds (1 minute 30 seconds)
+    setRestTimer(seconds);
 
     const interval = setInterval(() => {
       setRestTimer(prev => {
@@ -240,8 +240,8 @@ export const ActiveWorkout = () => {
       set.completedReps = set.maxReps;
       set.weight = exercise.workingWeight; // Capture weight at this moment
 
-      // Start rest timer
-      startRestTimer();
+      // Start rest timer with the exercise's personalized rest time
+      startRestTimer(exercise.restTime || 90);
     } else if (set.reps > 0 && set.completed) {
       // Decrement reps (user didn't complete all reps)
       set.reps -= 1;
@@ -282,6 +282,10 @@ export const ActiveWorkout = () => {
     const oldSetsCount = exercise.sets.length;
     const newSetsCount = config.sets;
     const newMaxReps = config.maxReps; // Can be number or array
+    const newRestTime = config.restTime || 90;
+
+    // Update exercise rest time
+    exercise.restTime = newRestTime;
 
     // Adjust sets array
     if (newSetsCount > oldSetsCount) {
@@ -312,7 +316,7 @@ export const ActiveWorkout = () => {
     updateActiveWorkout({ exercises: newExercises });
 
     // Track this change for personalization prompt
-    trackPersonalizationChange(exercise.exerciseId, config.sets, config.maxReps);
+    trackPersonalizationChange(exercise.exerciseId, config.sets, config.maxReps, newRestTime);
   };
 
   const handleResetExerciseSettings = () => {
@@ -372,15 +376,15 @@ export const ActiveWorkout = () => {
     });
   };
 
-  const trackPersonalizationChange = (exerciseId, sets, maxReps) => {
+  const trackPersonalizationChange = (exerciseId, sets, maxReps, restTime) => {
     setPersonalizedChanges((prev) => {
       const existing = prev.find((c) => c.exerciseId === exerciseId);
       if (existing) {
         return prev.map((c) =>
-          c.exerciseId === exerciseId ? { ...c, sets, maxReps } : c
+          c.exerciseId === exerciseId ? { ...c, sets, maxReps, restTime } : c
         );
       }
-      return [...prev, { exerciseId, sets, maxReps }];
+      return [...prev, { exerciseId, sets, maxReps, restTime }];
     });
   };
 
@@ -401,6 +405,7 @@ export const ActiveWorkout = () => {
         savePersonalization(activeWorkout.workoutTemplateId, change.exerciseId, {
           sets: change.sets,
           maxReps: change.maxReps,
+          restTime: change.restTime,
         });
       });
     }
@@ -681,6 +686,7 @@ export const ActiveWorkout = () => {
             defaultConfig={{
               sets: exercises.find((e) => e.id === personalizationModal.exercise.id)?.defaultSets || 3,
               maxReps: 12,
+              restTime: 90,
             }}
             onSave={handleSaveExerciseSettings}
             onReset={handleResetExerciseSettings}

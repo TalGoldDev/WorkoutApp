@@ -89,6 +89,7 @@ export const WorkoutProvider = ({ children }) => {
         const personalization = storage.getExercisePersonalization(template.id, ex.exerciseId);
         const setsCount = personalization?.sets || ex.sets;
         const maxRepsConfig = personalization?.maxReps || 12;
+        const restTime = personalization?.restTime || 90; // Default to 90 seconds
 
         // maxReps can be a number (applies to all sets) or an array (per-set values)
         const isPerSetReps = Array.isArray(maxRepsConfig);
@@ -98,6 +99,7 @@ export const WorkoutProvider = ({ children }) => {
           exerciseName: exercise?.name || 'Unknown',
           emoji: exercise?.emoji || '',
           workingWeight: 0, // Single weight for the entire exercise
+          restTime: restTime, // Rest time between sets for this exercise
           sets: Array.from({ length: setsCount }, (_, i) => ({
             setNumber: i + 1,
             weight: 0, // Kept for backward compatibility with saved workouts
