@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="gymGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dumbbell icon -->
+  <!-- Left weight -->
+  <rect x="8" y="35" width="15" height="30" rx="2" fill="url(#gymGradient)"/>
+
+  <!-- Left grip connector -->
+  <rect x="23" y="45" width="8" height="10" fill="url(#gymGradient)"/>
+
+  <!-- Center bar -->
+  <rect x="31" y="47" width="38" height="6" rx="3" fill="url(#gymGradient)"/>
+
+  <!-- Right grip connector -->
+  <rect x="69" y="45" width="8" height="10" fill="url(#gymGradient)"/>
+
+  <!-- Right weight -->
+  <rect x="77" y="35" width="15" height="30" rx="2" fill="url(#gymGradient)"/>
+
+  <!-- Accent lines on weights -->
+  <line x1="11" y1="40" x2="11" y2="60" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="20" y1="40" x2="20" y2="60" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="80" y1="40" x2="80" y2="60" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="89" y1="40" x2="89" y2="60" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
