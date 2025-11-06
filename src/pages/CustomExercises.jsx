@@ -109,6 +109,17 @@ export const CustomExercises = () => {
             </Button>
           </div>
         </div>
+
+        {/* Custom Exercise Modal */}
+        <CustomExerciseModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingExercise(null);
+          }}
+          onSave={handleSaveExercise}
+          editingExercise={editingExercise}
+        />
       </Layout>
     );
   }
