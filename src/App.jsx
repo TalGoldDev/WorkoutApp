@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { WorkoutProvider } from './contexts/WorkoutContext';
 import { Home } from './pages/Home';
 import { CreateWorkout } from './pages/CreateWorkout';
@@ -10,16 +11,18 @@ import { Admin } from './pages/Admin';
 function App() {
   return (
     <Router>
-      <WorkoutProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/create-workout" element={<CreateWorkout />} />
-          <Route path="/active-workout" element={<ActiveWorkout />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/statistics" element={<Statistics />} />
-          <Route path="/admin" element={<Admin />} />
-        </Routes>
-      </WorkoutProvider>
+      <ThemeProvider>
+        <WorkoutProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/create-workout" element={<CreateWorkout />} />
+            <Route path="/active-workout" element={<ActiveWorkout />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/admin" element={<Admin />} />
+          </Routes>
+        </WorkoutProvider>
+      </ThemeProvider>
     </Router>
   );
 }
