@@ -60,8 +60,8 @@ export const CustomExerciseModal = ({
       return;
     }
 
-    if (defaultSets < 1 || defaultSets > 5) {
-      setError('Default sets must be between 1 and 5');
+    if (defaultSets < 1 || defaultSets > 9) {
+      setError('Default sets must be between 1 and 9');
       return;
     }
 
@@ -215,8 +215,8 @@ export const CustomExerciseModal = ({
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">sets per workout</div>
               </div>
               <button
-                onClick={() => setDefaultSets(Math.min(5, defaultSets + 1))}
-                disabled={defaultSets >= 5}
+                onClick={() => setDefaultSets(Math.min(9, defaultSets + 1))}
+                disabled={defaultSets >= 9}
                 className="touch-target w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-blue-500 hover:bg-white dark:hover:bg-gray-800 text-lg sm:text-xl font-bold text-gray-900 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 +
