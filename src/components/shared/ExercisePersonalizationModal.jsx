@@ -16,14 +16,17 @@ export const ExercisePersonalizationModal = ({
   const [sets, setSets] = useState(currentConfig?.sets || defaultConfig.sets || 3);
   const [perSetReps, setPerSetReps] = useState([]);
   const [defaultReps, setDefaultReps] = useState(12);
+  const [restTime, setRestTime] = useState(currentConfig?.restTime || defaultConfig.restTime || 90);
   const [error, setError] = useState('');
 
   // Initialize per-set reps when modal opens or sets count changes
   useEffect(() => {
     const configSets = currentConfig?.sets || defaultConfig.sets || 3;
     const configMaxReps = currentConfig?.maxReps || defaultConfig.maxReps || 12;
+    const configRestTime = currentConfig?.restTime || defaultConfig.restTime || 90;
 
     setSets(configSets);
+    setRestTime(configRestTime);
 
     // Initialize per-set reps array
     let initialReps = [];
@@ -101,11 +104,16 @@ export const ExercisePersonalizationModal = ({
       return;
     }
 
+    if (restTime < 10 || restTime > 600) {
+      setError('Rest time must be between 10 and 600 seconds');
+      return;
+    }
+
     // Check if all reps are the same - if so, save as single value for efficiency
     const allSame = perSetReps.every(r => r === perSetReps[0]);
     const maxReps = allSame ? perSetReps[0] : perSetReps;
 
-    onSave({ sets, maxReps });
+    onSave({ sets, maxReps, restTime });
     onClose();
   };
 
@@ -114,6 +122,7 @@ export const ExercisePersonalizationModal = ({
     const resetReps = Array(defaultConfig.sets).fill(defaultConfig.maxReps || 12);
     setPerSetReps(resetReps);
     setDefaultReps(defaultConfig.maxReps || 12);
+    setRestTime(defaultConfig.restTime || 90);
     onReset();
     onClose();
   };
@@ -251,6 +260,63 @@ export const ExercisePersonalizationModal = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Rest Time Control */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Rest Time Between Sets
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setRestTime(Math.max(10, restTime - 15))}
+                disabled={restTime <= 10}
+                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-white text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                -
+              </button>
+              <div className="flex-1 text-center">
+                <div className="text-3xl font-bold text-gray-900">
+                  {Math.floor(restTime / 60)}:{(restTime % 60).toString().padStart(2, '0')}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {restTime} seconds (Default: {defaultConfig.restTime || 90}s)
+                </div>
+              </div>
+              <button
+                onClick={() => setRestTime(Math.min(600, restTime + 15))}
+                disabled={restTime >= 600}
+                className="touch-target w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-white text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+            </div>
+            <div className="mt-3 flex gap-2 flex-wrap">
+              <button
+                onClick={() => setRestTime(60)}
+                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+              >
+                1:00
+              </button>
+              <button
+                onClick={() => setRestTime(90)}
+                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+              >
+                1:30
+              </button>
+              <button
+                onClick={() => setRestTime(120)}
+                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+              >
+                2:00
+              </button>
+              <button
+                onClick={() => setRestTime(180)}
+                className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50"
+              >
+                3:00
+              </button>
             </div>
           </div>
         </div>
