@@ -98,6 +98,29 @@ export const CreateWorkout = () => {
     navigate('/active-workout');
   };
 
+  const handleSaveWorkout = () => {
+    if (!workoutName.trim()) {
+      setError('Please enter a workout name');
+      return;
+    }
+    if (selectedExercises.length === 0) {
+      setError('Please add at least one exercise');
+      return;
+    }
+
+    const template = {
+      name: workoutName,
+      exercises: selectedExercises.map((ex, idx) => ({
+        exerciseId: ex.exerciseId,
+        order: idx + 1,
+        sets: ex.sets,
+      })),
+    };
+
+    addTemplate(template);
+    navigate('/');
+  };
+
   const handleOpenPersonalization = (exercise, templateId) => {
     setPersonalizationModal({
       isOpen: true,
@@ -158,23 +181,23 @@ export const CreateWorkout = () => {
         <div className="flex items-center mb-6">
           <button
             onClick={() => navigate('/')}
-            className="touch-target -ml-2 mr-2 text-gray-600"
+            className="touch-target -ml-2 mr-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Create Workout</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Workout</h1>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
             {error}
           </div>
         )}
 
         {/* Workout Name */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Workout Name
           </label>
           <input
@@ -185,15 +208,15 @@ export const CreateWorkout = () => {
               setError('');
             }}
             placeholder="e.g., Upper Body Day"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
 
         {/* Selected Exercises */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Exercises</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Exercises</h2>
           {selectedExercises.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               No exercises added yet
             </p>
           ) : (
@@ -205,17 +228,17 @@ export const CreateWorkout = () => {
                 return (
                   <div
                     key={exercise.exerciseId}
-                    className={`bg-white border rounded-lg p-4 flex items-center gap-3 ${
-                      isPersonalized ? 'border-blue-400 border-2' : 'border-gray-200'
+                    className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex items-center gap-3 ${
+                      isPersonalized ? 'border-blue-400 dark:border-blue-500 border-2' : 'border-gray-200 dark:border-gray-700'
                     }`}
                   >
-                    <GripVertical size={20} className="text-gray-400" />
+                    <GripVertical size={20} className="text-gray-400 dark:text-gray-500" />
                     <span className="text-2xl">{exercise.emoji}</span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">{exercise.exerciseName}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{exercise.exerciseName}</p>
                         {isPersonalized && (
-                          <span className="text-blue-500 text-xs">⭐</span>
+                          <span className="text-blue-500 dark:text-blue-400 text-xs">⭐</span>
                         )}
                       </div>
                     </div>
@@ -223,7 +246,7 @@ export const CreateWorkout = () => {
                       <select
                         value={exercise.sets}
                         onChange={(e) => handleUpdateSets(exercise.exerciseId, e.target.value)}
-                        className="px-3 py-1 border border-gray-300 rounded text-sm"
+                        className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                           <option key={num} value={num}>
@@ -233,14 +256,14 @@ export const CreateWorkout = () => {
                       </select>
                       <button
                         onClick={() => handleOpenPersonalization(exercise, 'temp')}
-                        className="touch-target text-gray-500 hover:text-primary"
+                        className="touch-target text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary"
                         title="Customize exercise"
                       >
                         <Settings2 size={20} />
                       </button>
                       <button
                         onClick={() => handleRemoveExercise(exercise.exerciseId)}
-                        className="touch-target text-red-500 hover:text-red-700"
+                        className="touch-target text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                       >
                         <X size={20} />
                       </button>
@@ -265,8 +288,8 @@ export const CreateWorkout = () => {
 
         {/* Exercise Selection List */}
         {showExerciseList && (
-          <div className="mb-6 bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
-            <h3 className="font-semibold text-gray-900 mb-3">Select Exercise</h3>
+          <div className="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Select Exercise</h3>
             <div className="space-y-2">
               {exercises.map((exercise) => {
                 const isAdded = selectedExercises.find(
@@ -279,8 +302,8 @@ export const CreateWorkout = () => {
                     disabled={isAdded}
                     className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 ${
                       isAdded
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-white hover:bg-gray-100 border border-gray-200'
+                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                        : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                     }`}
                   >
                     <span className="text-2xl">{exercise.emoji}</span>
@@ -299,17 +322,17 @@ export const CreateWorkout = () => {
             variant="primary"
             size="lg"
             fullWidth
+            onClick={handleSaveWorkout}
+          >
+            Save Workout
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
             onClick={handleStartWorkout}
           >
             Save & Start Workout
-          </Button>
-          <Button
-            variant="ghost"
-            size="md"
-            fullWidth
-            onClick={handleQuickStart}
-          >
-            Start Without Saving
           </Button>
         </div>
       </div>
