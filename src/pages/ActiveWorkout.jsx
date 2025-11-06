@@ -19,6 +19,7 @@ export const ActiveWorkout = () => {
     getPersonalizedExercise,
     resetPersonalization,
     exercises,
+    editMode,
   } = useWorkoutContext();
   const [currentExercises, setCurrentExercises] = useState([]);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
@@ -337,6 +338,13 @@ export const ActiveWorkout = () => {
   };
 
   const handleCompleteWorkout = () => {
+    // If in edit mode, don't show personalization prompt - just save
+    if (editMode) {
+      completeWorkout();
+      navigate('/history');
+      return;
+    }
+
     // Check if there are any personalized changes
     if (personalizedChanges.length > 0 && activeWorkout.workoutTemplateId) {
       setShowSavePersonalization(true);
@@ -386,7 +394,14 @@ export const ActiveWorkout = () => {
         {/* Header */}
         <div className="bg-primary text-white p-6 sticky top-0 z-10 shadow-md">
           <div className="flex justify-between items-center mb-2">
-            <h1 className="text-xl font-bold">{activeWorkout.workoutName}</h1>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold">{activeWorkout.workoutName}</h1>
+              {editMode && (
+                <span className="text-xs bg-yellow-500/30 text-yellow-100 px-2 py-0.5 rounded mt-1 inline-block">
+                  Editing workout
+                </span>
+              )}
+            </div>
             <button
               onClick={() => setShowConfirmCancel(true)}
               className="touch-target text-white hover:text-gray-200"
@@ -534,7 +549,7 @@ export const ActiveWorkout = () => {
               fullWidth
               onClick={handleCompleteWorkout}
             >
-              Finish Workout
+              {editMode ? 'Save Changes' : 'Finish Workout'}
             </Button>
           </div>
         </div>
@@ -544,10 +559,12 @@ export const ActiveWorkout = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 max-w-sm w-full">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Cancel Workout?
+                {editMode ? 'Cancel Edit?' : 'Cancel Workout?'}
               </h3>
               <p className="text-gray-600 mb-6">
-                Your progress will not be saved. Are you sure you want to cancel?
+                {editMode
+                  ? 'Your changes will not be saved. Are you sure you want to cancel?'
+                  : 'Your progress will not be saved. Are you sure you want to cancel?'}
               </p>
               <div className="flex gap-3">
                 <Button
@@ -562,7 +579,7 @@ export const ActiveWorkout = () => {
                   fullWidth
                   onClick={handleCancelWorkout}
                 >
-                  Cancel Workout
+                  {editMode ? 'Cancel Edit' : 'Cancel Workout'}
                 </Button>
               </div>
             </div>

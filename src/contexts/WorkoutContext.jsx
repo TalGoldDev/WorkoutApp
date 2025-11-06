@@ -17,6 +17,9 @@ export const WorkoutProvider = ({ children }) => {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [templatePersonalizations, setTemplatePersonalizations] = useState({});
+  const [editMode, setEditMode] = useState(false);
+  const [originalWorkoutId, setOriginalWorkoutId] = useState(null);
+  const [originalCompletedAt, setOriginalCompletedAt] = useState(null);
 
   // Load data on mount
   useEffect(() => {
@@ -120,23 +123,76 @@ export const WorkoutProvider = ({ children }) => {
   const completeWorkout = () => {
     if (!activeWorkout) return;
 
-    const completedWorkout = {
-      ...activeWorkout,
-      endTime: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      duration: Math.round(
-        (new Date() - new Date(activeWorkout.startTime)) / 1000 / 60
-      ),
-    };
+    if (editMode && originalWorkoutId) {
+      // Update existing workout - preserve original completedAt
+      const updatedWorkout = {
+        ...activeWorkout,
+        endTime: new Date().toISOString(),
+        completedAt: originalCompletedAt, // Keep original completion date
+        duration: Math.round(
+          (new Date() - new Date(activeWorkout.startTime)) / 1000 / 60
+        ),
+      };
 
-    storage.addCompletedWorkout(completedWorkout);
-    setCompletedWorkouts(storage.getCompletedWorkouts());
-    setActiveWorkout(null);
-    return completedWorkout;
+      storage.updateCompletedWorkout(originalWorkoutId, updatedWorkout);
+      setCompletedWorkouts(storage.getCompletedWorkouts());
+      setActiveWorkout(null);
+      setEditMode(false);
+      setOriginalWorkoutId(null);
+      setOriginalCompletedAt(null);
+      return updatedWorkout;
+    } else {
+      // Create new workout
+      const completedWorkout = {
+        ...activeWorkout,
+        endTime: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        duration: Math.round(
+          (new Date() - new Date(activeWorkout.startTime)) / 1000 / 60
+        ),
+      };
+
+      storage.addCompletedWorkout(completedWorkout);
+      setCompletedWorkouts(storage.getCompletedWorkouts());
+      setActiveWorkout(null);
+      return completedWorkout;
+    }
   };
 
   const cancelWorkout = () => {
     setActiveWorkout(null);
+    setEditMode(false);
+    setOriginalWorkoutId(null);
+    setOriginalCompletedAt(null);
+  };
+
+  // Load a completed workout for editing
+  const loadWorkoutForEditing = (workoutId) => {
+    const workout = storage.getCompletedWorkoutById(workoutId);
+    if (!workout) return false;
+
+    // Check if workout is still editable
+    if (!storage.isWorkoutEditable(workout.completedAt)) {
+      return false;
+    }
+
+    // Load the workout as active, preserving all its data
+    setActiveWorkout({
+      ...workout,
+      // Remove completedAt and endTime as these will be set on save
+      completedAt: undefined,
+      endTime: undefined,
+    });
+    setEditMode(true);
+    setOriginalWorkoutId(workoutId);
+    setOriginalCompletedAt(workout.completedAt);
+    return true;
+  };
+
+  // Delete a completed workout
+  const deleteCompletedWorkoutById = (id) => {
+    storage.deleteCompletedWorkout(id);
+    setCompletedWorkouts(storage.getCompletedWorkouts());
   };
 
   // Personalization methods
@@ -168,6 +224,7 @@ export const WorkoutProvider = ({ children }) => {
     completedWorkouts,
     activeWorkout,
     templatePersonalizations,
+    editMode,
     addExercise,
     updateExercise,
     deleteExercise: deleteExerciseById,
@@ -178,6 +235,8 @@ export const WorkoutProvider = ({ children }) => {
     updateActiveWorkout,
     completeWorkout,
     cancelWorkout,
+    loadWorkoutForEditing,
+    deleteCompletedWorkout: deleteCompletedWorkoutById,
     getPersonalizedExercise,
     savePersonalization,
     resetPersonalization,
