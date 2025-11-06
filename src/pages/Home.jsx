@@ -119,55 +119,53 @@ export const Home = () => {
                     key={template.id}
                     className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-colors"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white flex-1">
                         {template.name}
                       </h3>
-                      {personalizationCount > 0 && (
-                        <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full flex items-center gap-1">
-                          <span>⭐</span>
-                          <span>{personalizationCount}</span>
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 ml-2">
+                        {personalizationCount > 0 && (
+                          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full flex items-center gap-1">
+                            <span>⭐</span>
+                            <span>{personalizationCount}</span>
+                          </span>
+                        )}
+                        <button
+                          onClick={() => handleEditTemplate(template)}
+                          className="touch-target p-1.5 text-primary dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          title="Edit workout"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        {deleteConfirmId === template.id ? (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleDeleteTemplate(template.id)}
+                              className="touch-target px-2 py-1 text-xs font-medium text-white bg-red-500 dark:bg-red-600 rounded-lg hover:bg-red-600 dark:hover:bg-red-700"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirmId(null)}
+                              className="touch-target px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeleteConfirmId(template.id)}
+                            className="touch-target p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            title="Delete workout"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                       {template.exercises.length} exercises
                     </p>
-                    <div className="flex gap-2 mb-3">
-                      <button
-                        onClick={() => handleEditTemplate(template)}
-                        className="flex-1 touch-target p-2 text-primary dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-600"
-                        title="Edit workout"
-                      >
-                        <Pencil size={16} />
-                        <span className="text-sm font-medium">Edit</span>
-                      </button>
-                      {deleteConfirmId === template.id ? (
-                        <>
-                          <button
-                            onClick={() => handleDeleteTemplate(template.id)}
-                            className="flex-1 touch-target p-2 text-white bg-red-500 dark:bg-red-600 rounded-lg hover:bg-red-600 dark:hover:bg-red-700 transition-colors"
-                          >
-                            <span className="text-sm font-medium">Confirm</span>
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmId(null)}
-                            className="flex-1 touch-target p-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                          >
-                            <span className="text-sm font-medium">Cancel</span>
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirmId(template.id)}
-                          className="flex-1 touch-target p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-600"
-                          title="Delete workout"
-                        >
-                          <Trash2 size={16} />
-                          <span className="text-sm font-medium">Delete</span>
-                        </button>
-                      )}
-                    </div>
                     <Button
                       variant="secondary"
                       size="sm"
