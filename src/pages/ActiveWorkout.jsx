@@ -4,7 +4,8 @@ import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { Layout } from '../components/shared/Layout';
 import { Button } from '../components/shared/Button';
 import { ExercisePersonalizationModal } from '../components/shared/ExercisePersonalizationModal';
-import { Check, Minus, Plus, X, Settings2 } from 'lucide-react';
+import { ExerciseSwitcherModal } from '../components/shared/ExerciseSwitcherModal';
+import { Check, Minus, Plus, X, Settings2, RefreshCw } from 'lucide-react';
 import { formatWeight } from '../utils/helpers';
 import { getServiceWorkerRegistration } from '../utils/serviceWorkerRegistration';
 
@@ -28,6 +29,10 @@ export const ActiveWorkout = () => {
     isOpen: false,
     exerciseIndex: null,
     exercise: null,
+  });
+  const [switcherModal, setSwitcherModal] = useState({
+    isOpen: false,
+    exerciseIndex: null,
   });
   const [restTimer, setRestTimer] = useState(null);
   const [timerInterval, setTimerInterval] = useState(null);
@@ -324,6 +329,49 @@ export const ActiveWorkout = () => {
     });
   };
 
+  const handleOpenSwitcher = (exerciseIdx) => {
+    setSwitcherModal({
+      isOpen: true,
+      exerciseIndex: exerciseIdx,
+    });
+  };
+
+  const handleSwitchExercise = (newExerciseId) => {
+    if (switcherModal.exerciseIndex === null) return;
+
+    const exerciseIdx = switcherModal.exerciseIndex;
+    const newExercises = [...currentExercises];
+    const oldExercise = newExercises[exerciseIdx];
+    const newExercise = exercises.find((e) => e.id === newExerciseId);
+
+    if (!newExercise) return;
+
+    // Preserve workout progress but switch exercise details
+    newExercises[exerciseIdx] = {
+      ...oldExercise,
+      exerciseId: newExercise.id,
+      exerciseName: newExercise.name,
+      emoji: newExercise.emoji,
+      // Keep workingWeight, sets array (preserves completed sets)
+    };
+
+    setCurrentExercises(newExercises);
+    updateActiveWorkout({ exercises: newExercises });
+
+    // Close the modal
+    setSwitcherModal({
+      isOpen: false,
+      exerciseIndex: null,
+    });
+  };
+
+  const handleCloseSwitcher = () => {
+    setSwitcherModal({
+      isOpen: false,
+      exerciseIndex: null,
+    });
+  };
+
   const trackPersonalizationChange = (exerciseId, sets, maxReps) => {
     setPersonalizedChanges((prev) => {
       const existing = prev.find((c) => c.exerciseId === exerciseId);
@@ -460,14 +508,24 @@ export const ActiveWorkout = () => {
                   <h2 className="text-lg font-semibold text-gray-900 flex-1">
                     {exercise.exerciseName}
                   </h2>
-                  {/* Settings Icon */}
-                  <button
-                    onClick={() => handleOpenSettings(exerciseIdx)}
-                    className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
-                    title="Customize sets and reps"
-                  >
-                    <Settings2 size={20} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {/* Switch Exercise Button */}
+                    <button
+                      onClick={() => handleOpenSwitcher(exerciseIdx)}
+                      className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
+                      title="Switch exercise"
+                    >
+                      <RefreshCw size={20} />
+                    </button>
+                    {/* Settings Icon */}
+                    <button
+                      onClick={() => handleOpenSettings(exerciseIdx)}
+                      className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-primary"
+                      title="Customize sets and reps"
+                    >
+                      <Settings2 size={20} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Single Weight Input for Exercise */}
@@ -626,6 +684,22 @@ export const ActiveWorkout = () => {
             }}
             onSave={handleSaveExerciseSettings}
             onReset={handleResetExerciseSettings}
+          />
+        )}
+
+        {/* Exercise Switcher Modal */}
+        {switcherModal.isOpen && (
+          <ExerciseSwitcherModal
+            isOpen={switcherModal.isOpen}
+            onClose={handleCloseSwitcher}
+            onSelectExercise={handleSwitchExercise}
+            currentExerciseId={
+              switcherModal.exerciseIndex !== null
+                ? currentExercises[switcherModal.exerciseIndex]?.exerciseId
+                : null
+            }
+            allExercises={exercises}
+            exercisesInWorkout={currentExercises.map((ex) => ex.exerciseId)}
           />
         )}
       </div>
